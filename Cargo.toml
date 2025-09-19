@@ -1,0 +1,25 @@
+[package]
+name = "interception-rust"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+anyhow = "1.0.100"
+evdev = { version = "0.13.2", features = ["serde"] }
+udev = "0.9.3"
+uinput = "0.1.3"
+nix = { version = "0.30.1", features = ["poll"] }
+serde = { version = "1.0.225", features = ["derive"] }
+serde_yaml = "0.9.33"
+
+[profile.release]
+opt-level = "z"         # Optimize for size.
+lto = true              # Enable Link Time Optimization.
+codegen-units = 1       # Reduce the number of codegen units to enhance optimization.
+strip = true            # Remove symbol information for a smaller binary.
+panic = "abort"         # Aborts on panic, reducing the binary size.
+incremental = false     # Disable incremental compilation.
+overflow-checks = false # Disable overflow checks if not required (unsafe).
+
+[profile.dev.package."*"]
+opt-level = 2

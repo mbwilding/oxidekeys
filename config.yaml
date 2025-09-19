@@ -1,0 +1,19 @@
+remaps:
+  KEY_SPACE:
+    tap: KEY_SPACE
+    hold: KEY_LEFTSHIFT
+    double: null
+    tapping_term: null
+    overlap: true
+  KEY_LEFTSHIFT:
+    tap: KEY_ESC
+    hold: KEY_LEFTMETA
+    double: null
+    tapping_term: null
+    overlap: true
+  KEY_CAPSLOCK:
+    tap: KEY_BACKSPACE
+    hold: KEY_LEFTCTRL
+    double: null
+    tapping_term: null
+    overlap: true
