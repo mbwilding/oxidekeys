@@ -12,7 +12,9 @@ use std::sync::Mutex;
 use udev::Enumerator;
 use uinput::device::Device as UInputDevice;
 
-fn open_keyboard_devices(config: &Config) -> Result<Vec<(EvDevDevice, HashMap<KeyCode, RemapAction>)>> {
+fn open_keyboard_devices(
+    config: &Config,
+) -> Result<Vec<(EvDevDevice, HashMap<KeyCode, RemapAction>)>> {
     println!("Detecting keyboards");
 
     let mut enumerator = Enumerator::new()?;
@@ -26,7 +28,10 @@ fn open_keyboard_devices(config: &Config) -> Result<Vec<(EvDevDevice, HashMap<Ke
             && let Ok(mut dev) = EvDevDevice::open(devnode)
         {
             let name_matches = match dev.name() {
-                Some(name_value) => config.keyboards.iter().any(|keyboard| name_value == keyboard.0),
+                Some(name_value) => config
+                    .keyboards
+                    .iter()
+                    .any(|keyboard| name_value == keyboard.0),
                 None => false,
             };
 
@@ -36,10 +41,18 @@ fn open_keyboard_devices(config: &Config) -> Result<Vec<(EvDevDevice, HashMap<Ke
                     dev.grab()?;
                 }
                 // Find the associated keyboard value
-                let keyboard_value = dev.name().and_then(|name_value| {
-                    config.keyboards.iter()
-                        .find_map(|(k, v)| if name_value == k { Some(v.clone()) } else { None })
-                }).unwrap_or_default();
+                let keyboard_value = dev
+                    .name()
+                    .and_then(|name_value| {
+                        config.keyboards.iter().find_map(|(k, v)| {
+                            if name_value == k {
+                                Some(v.clone())
+                            } else {
+                                None
+                            }
+                        })
+                    })
+                    .unwrap_or_default();
                 devices.push((dev, keyboard_value));
             } else {
                 println!("Keyboard Ignored: {:?}", dev.name());
@@ -99,7 +112,12 @@ fn main() -> Result<()> {
     Ok(())
 }
 
-fn process(mut device: EvDevDevice, virt_keyboard: Arc<Mutex<UInputDevice>>, keyboard: &HashMap<KeyCode, RemapAction>, config: &Config) -> Result<()> {
+fn process(
+    mut device: EvDevDevice,
+    virt_keyboard: Arc<Mutex<UInputDevice>>,
+    keyboard: &HashMap<KeyCode, RemapAction>,
+    config: &Config,
+) -> Result<()> {
     let mut pending: HashMap<KeyCode, PendingKey> = HashMap::new();
 
     loop {
@@ -114,9 +132,9 @@ fn process(mut device: EvDevDevice, virt_keyboard: Arc<Mutex<UInputDevice>>, key
             let key = KeyCode(ev.code());
 
             if state == PRESS {
-                handle_press(&mut virt_keyboard, &config, keyboard, &mut pending, key)?;
+                handle_press(&mut virt_keyboard, config, keyboard, &mut pending, key)?;
             } else if state == RELEASE {
-                handle_release(&mut virt_keyboard, &config, keyboard, &mut pending, key)?;
+                handle_release(&mut virt_keyboard, config, keyboard, &mut pending, key)?;
             }
         }
     }
