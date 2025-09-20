@@ -99,6 +99,13 @@ fn default_keyboards() -> HashMap<String, HashMap<KeyCode, RemapAction>> {
                     ..Default::default()
                 },
             ),
+            #[allow(clippy::needless_update)]
+            (
+                KeyCode::KEY_BACKSPACE,
+                RemapAction {
+                    ..Default::default()
+                },
+            ),
         ]
         .into_iter()
         .collect::<HashMap<KeyCode, RemapAction>>(),
@@ -188,7 +195,7 @@ impl Default for Config {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub(crate) struct RemapAction {
     /// Tap key
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -205,17 +212,6 @@ pub(crate) struct RemapAction {
     /// Homerow Mod Term
     #[serde(skip_serializing_if = "Option::is_none")]
     pub hrm_term: Option<u16>,
-}
-
-impl Default for RemapAction {
-    fn default() -> Self {
-        Self {
-            tap: Some(vec![KeyCode::KEY_RESERVED]),
-            hold: None,
-            hrm: None,
-            hrm_term: None,
-        }
-    }
 }
 
 pub(crate) struct PendingKey {
