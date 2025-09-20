@@ -114,10 +114,11 @@ fn default_layers() -> HashMap<String, HashMap<KeyCode, HashMap<KeyCode, KeyCode
         HashMap::from([(
             KeyCode::KEY_RIGHTALT,
             HashMap::from([
-                (KeyCode::KEY_H, KeyCode::KEY_LEFT),
-                (KeyCode::KEY_J, KeyCode::KEY_DOWN),
-                (KeyCode::KEY_K, KeyCode::KEY_UP),
-                (KeyCode::KEY_L, KeyCode::KEY_RIGHT),
+                // NOTE: Dvorak
+                (KeyCode::KEY_J, KeyCode::KEY_LEFT),
+                (KeyCode::KEY_C, KeyCode::KEY_DOWN),
+                (KeyCode::KEY_V, KeyCode::KEY_UP),
+                (KeyCode::KEY_P, KeyCode::KEY_RIGHT),
             ]),
         )]),
     )])

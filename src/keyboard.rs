@@ -4,10 +4,10 @@ use anyhow::{Result, anyhow, bail};
 use evdev::Device as EvDevDevice;
 use evdev::{EventType, KeyCode};
 use log::{debug, info};
-use std::collections::HashSet;
+use std::collections::{HashSet, HashMap};
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
-use std::{collections::HashMap, time::Instant};
+use std::{time::Instant};
 use udev::Enumerator;
 use uinput::device::Device as UInputDevice;
 
@@ -100,7 +100,8 @@ pub(crate) fn process(
     config: &Config,
 ) -> Result<()> {
     let mut pending: HashMap<KeyCode, PendingKey> = HashMap::new();
-    let mut keys_down = HashSet::new();
+    let mut keys_down: HashSet<KeyCode> = HashSet::new();
+    let mut active_layers: HashSet<String> = HashSet::new();
 
     loop {
         let events = device.fetch_events()?;
@@ -113,51 +114,74 @@ pub(crate) fn process(
             let state = ev.value();
             let key = KeyCode(ev.code());
 
+            let mut is_layer_trigger = false;
+            for (layer_name, layer_def) in &config.layers {
+                if layer_def.contains_key(&key) {
+                    is_layer_trigger = true;
+                    match state {
+                        PRESS => {
+                            active_layers.insert(layer_name.clone());
+                        },
+                        RELEASE => {
+                            active_layers.remove(layer_name);
+                        },
+                        _ => {}
+                    }
+                    break;
+                }
+            }
+            if is_layer_trigger {
+                match state {
+                    PRESS => { keys_down.insert(key); }
+                    RELEASE => { keys_down.remove(&key); }
+                    _ => {}
+                }
+                continue;
+            }
+
+            let remapped_key = resolve_layered_key(key, &active_layers, config);
+
             match state {
                 PRESS => {
-                    let mut flush_keys = Vec::new();
-
-                    for (pending_keycode, pending_key) in pending.iter_mut() {
-                        let remap = pending_key.remap;
-                        if remap.hrm == Some(true)
-                            && !pending_key.hold_sent
-                            && !is_modifier(key)
-                            && key != *pending_keycode
-                        {
-                            let hrm_term = remap.hrm_term.unwrap_or(0);
-                            let elapsed = pending_key.time_pressed.elapsed();
-                            if elapsed >= Duration::from_millis(hrm_term as u64) {
-                                if let Some(hold) = remap.hold {
-                                    press(&mut virt_keyboard, hold, config.no_emit)?;
-                                    pending_key.hold_sent = true;
-                                }
-                            } else {
-                                flush_keys.push(*pending_keycode);
-                            }
-                        }
-                    }
-
-                    for flush_key in flush_keys {
-                        if let Some(pending_key) = remove_pending(&mut pending, &flush_key) {
-                            let remap = pending_key.remap;
-                            if let Some(tap) = remap.tap {
-                                press(&mut virt_keyboard, tap, config.no_emit)?;
-                                release(&mut virt_keyboard, tap, config.no_emit)?;
-                            }
-                        }
-                    }
-
                     keys_down.insert(key);
-                    handle_key_down(&mut virt_keyboard, config, &mut pending, key, remaps)?;
+                    handle_key_down(
+                        &mut virt_keyboard,
+                        config,
+                        &mut pending,
+                        remapped_key,
+                        remaps
+                    )?;
                 }
                 RELEASE => {
                     keys_down.remove(&key);
-                    handle_key_up(&mut virt_keyboard, config, &mut pending, key)?;
+                    handle_key_up(
+                        &mut virt_keyboard,
+                        config,
+                        &mut pending,
+                        remapped_key
+                    )?;
                 }
                 _ => {}
             }
         }
     }
+}
+
+fn resolve_layered_key(
+    key: KeyCode,
+    active_layers: &HashSet<String>,
+    config: &Config,
+) -> KeyCode {
+    for layer in active_layers {
+        if let Some(layer_map) = config.layers.get(layer) {
+            for (_trigger, mapping) in layer_map {
+                if let Some(&remapped) = mapping.get(&key) {
+                    return remapped;
+                }
+            }
+        }
+    }
+    key
 }
 
 pub(crate) fn press(device: &mut UInputDevice, code: KeyCode, no_emit: bool) -> Result<()> {
