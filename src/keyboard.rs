@@ -116,14 +116,27 @@ pub(crate) fn process(
             match state {
                 PRESS => {
                     let mut flush_keys = Vec::new();
-                    for (pending_keycode, pending_key) in pending.iter() {
+
+                    for (pending_keycode, pending_key) in pending.iter_mut() {
                         let remap = pending_key.remap;
-                        if remap.hrm == Some(true) && !pending_key.hold_sent {
-                            if !is_modifier(key) && key != *pending_keycode {
+                        if remap.hrm == Some(true)
+                            && !pending_key.hold_sent
+                            && !is_modifier(key)
+                            && key != *pending_keycode
+                        {
+                            let hrm_term = remap.hrm_term.unwrap_or(0);
+                            let elapsed = pending_key.time_pressed.elapsed();
+                            if elapsed >= Duration::from_millis(hrm_term as u64) {
+                                if let Some(hold) = remap.hold {
+                                    press(&mut virt_keyboard, hold, config.no_emit)?;
+                                    pending_key.hold_sent = true;
+                                }
+                            } else {
                                 flush_keys.push(*pending_keycode);
                             }
                         }
                     }
+
                     for flush_key in flush_keys {
                         if let Some(pending_key) = remove_pending(&mut pending, &flush_key) {
                             let remap = pending_key.remap;
@@ -133,6 +146,7 @@ pub(crate) fn process(
                             }
                         }
                     }
+
                     keys_down.insert(key);
                     handle_key_down(&mut virt_keyboard, config, &mut pending, key, remaps)?;
                 }
