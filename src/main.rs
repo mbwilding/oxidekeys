@@ -100,54 +100,95 @@ fn process(mut device: EvDevDevice, mut virt_keyboard: UInputDevice, config: Con
             let key = KeyCode(code);
 
             if state == PRESS {
-                if let Some(&remap) = config.remaps.get(&key) {
-                    if remap.hold.is_some() {
-                        pending.insert(
-                            key,
-                            PendingKey {
-                                remap,
-                                hold_sent: false,
-                            },
-                        );
-                    } else {
-                        press(&mut virt_keyboard, remap.tap, config.no_emit)?;
-                    }
-                } else {
-                    for (_pending_keycode, pending_key) in pending.iter_mut() {
-                        let remap = pending_key.remap;
-                        if remap.hold.is_some()
-                            && !pending_key.hold_sent
-                            && let Some(hold_code) = remap.hold
-                        {
-                            press(&mut virt_keyboard, hold_code, config.no_emit)?;
-                            pending_key.hold_sent = true;
-                        }
-                    }
-                    press(&mut virt_keyboard, key, config.no_emit)?;
-                }
+                handle_press(
+                    &mut virt_keyboard,
+                    &config,
+                    &mut pending,
+                    key,
+                )?;
             } else if state == RELEASE {
-                if let Some(pending_key) = pending.remove(&key) {
-                    if pending_key.remap.hold.is_some() {
-                        if !pending_key.hold_sent {
-                            press(&mut virt_keyboard, pending_key.remap.tap, config.no_emit)?;
-                            release(&mut virt_keyboard, pending_key.remap.tap, config.no_emit)?;
-                        } else if let Some(hold_code) = pending_key.remap.hold {
-                            release(&mut virt_keyboard, hold_code, config.no_emit)?;
-                        }
-                    } else if pending_key.hold_sent {
-                        if let Some(hold_code) = pending_key.remap.hold {
-                            release(&mut virt_keyboard, hold_code, config.no_emit)?;
-                        }
-                    } else if let Some(hold_code) = pending_key.remap.hold {
-                        press(&mut virt_keyboard, hold_code, config.no_emit)?;
-                        release(&mut virt_keyboard, hold_code, config.no_emit)?;
-                    }
-                } else if let Some(&remap) = config.remaps.get(&key) {
-                    release(&mut virt_keyboard, remap.tap, config.no_emit)?;
-                } else {
-                    release(&mut virt_keyboard, key, config.no_emit)?;
-                }
+                handle_release(
+                    &mut virt_keyboard,
+                    &config,
+                    &mut pending,
+                    key,
+                )?;
             }
         }
     }
+}
+
+fn handle_press(
+    virt_keyboard: &mut UInputDevice,
+    config: &Config,
+    pending: &mut HashMap<KeyCode, PendingKey>,
+    key: KeyCode,
+) -> Result<()> {
+    if let Some(&remap) = config.remaps.get(&key) {
+        if remap.hold.is_some() {
+            pending.insert(
+                key,
+                PendingKey {
+                    remap,
+                    hold_sent: false,
+                },
+            );
+        } else {
+            press(virt_keyboard, remap.tap, config.no_emit)?;
+        }
+    } else {
+        send_holds_for_pending_keys(virt_keyboard, config, pending)?;
+        press(virt_keyboard, key, config.no_emit)?;
+    }
+    Ok(())
+}
+
+fn send_holds_for_pending_keys(
+    virt_keyboard: &mut UInputDevice,
+    config: &Config,
+    pending: &mut HashMap<KeyCode, PendingKey>,
+) -> Result<()> {
+    for (_pending_keycode, pending_key) in pending.iter_mut() {
+        let remap = pending_key.remap;
+        if remap.hold.is_some()
+            && !pending_key.hold_sent
+            && remap.hold.is_some()
+        {
+            if let Some(hold_code) = remap.hold {
+                press(virt_keyboard, hold_code, config.no_emit)?;
+                pending_key.hold_sent = true;
+            }
+        }
+    }
+    Ok(())
+}
+
+fn handle_release(
+    virt_keyboard: &mut UInputDevice,
+    config: &Config,
+    pending: &mut HashMap<KeyCode, PendingKey>,
+    key: KeyCode,
+) -> Result<()> {
+    if let Some(pending_key) = pending.remove(&key) {
+        if pending_key.remap.hold.is_some() {
+            if !pending_key.hold_sent {
+                press(virt_keyboard, pending_key.remap.tap, config.no_emit)?;
+                release(virt_keyboard, pending_key.remap.tap, config.no_emit)?;
+            } else if let Some(hold_code) = pending_key.remap.hold {
+                release(virt_keyboard, hold_code, config.no_emit)?;
+            }
+        } else if pending_key.hold_sent {
+            if let Some(hold_code) = pending_key.remap.hold {
+                release(virt_keyboard, hold_code, config.no_emit)?;
+            }
+        } else if let Some(hold_code) = pending_key.remap.hold {
+            press(virt_keyboard, hold_code, config.no_emit)?;
+            release(virt_keyboard, hold_code, config.no_emit)?;
+        }
+    } else if let Some(&remap) = config.remaps.get(&key) {
+        release(virt_keyboard, remap.tap, config.no_emit)?;
+    } else {
+        release(virt_keyboard, key, config.no_emit)?;
+    }
+    Ok(())
 }
