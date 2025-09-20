@@ -3,7 +3,7 @@ use crate::structs::{Config, PendingKey, RemapAction};
 use anyhow::{Result, anyhow, bail};
 use evdev::Device as EvDevDevice;
 use evdev::{EventType, KeyCode};
-use log::{debug, info, trace};
+use log::{debug, info};
 use std::sync::{Arc, Mutex};
 use std::{collections::HashMap, time::Instant};
 use udev::Enumerator;
@@ -96,10 +96,8 @@ pub(crate) fn process(
             let key = KeyCode(ev.code());
 
             match state {
-                PRESS => handle_key_press(&mut virt_keyboard, config, remaps, &mut pending, key)?,
-                RELEASE => {
-                    handle_key_release(&mut virt_keyboard, config, &mut pending, key)?
-                }
+                PRESS => handle_key_down(&mut virt_keyboard, config, remaps, &mut pending, key)?,
+                RELEASE => handle_key_up(&mut virt_keyboard, config, &mut pending, key)?,
                 _ => {}
             }
         }
@@ -161,7 +159,7 @@ pub(crate) fn send_holds_for_all_pending_keys(
     Ok(())
 }
 
-pub(crate) fn handle_key_press(
+pub(crate) fn handle_key_down(
     virt_keyboard: &mut UInputDevice,
     config: &Config,
     remaps: &HashMap<KeyCode, RemapAction>,
@@ -169,11 +167,7 @@ pub(crate) fn handle_key_press(
     key: KeyCode,
 ) -> Result<()> {
     if let Some(&remap) = remaps.get(&key) {
-        if remap.hold.is_some() {
-            add_pending(pending, key, remap);
-        } else {
-            press(virt_keyboard, remap.tap, config.no_emit)?;
-        }
+        add_pending(pending, key, remap);
     } else {
         send_holds_for_all_pending_keys(virt_keyboard, config, pending)?;
         press(virt_keyboard, key, config.no_emit)?;
@@ -181,26 +175,31 @@ pub(crate) fn handle_key_press(
     Ok(())
 }
 
-pub(crate) fn handle_key_release(
+pub(crate) fn handle_key_up(
     virt_keyboard: &mut UInputDevice,
     config: &Config,
     pending: &mut HashMap<KeyCode, PendingKey>,
     key: KeyCode,
 ) -> Result<()> {
     if let Some(pending_key) = remove_pending(pending, &key) {
-        match (pending_key.remap.hold, pending_key.hold_sent) {
-            (Some(hold_code), true) => {
+        match (
+            pending_key.remap.tap,
+            pending_key.remap.hold,
+            pending_key.hold_sent,
+        ) {
+            (_, Some(hold), true) => {
                 // Release hold remapped
-                release(virt_keyboard, hold_code, config.no_emit)?;
+                release(virt_keyboard, hold, config.no_emit)?;
             }
-            (_, _) => {
+            (Some(tap), _, _) => {
                 // Tap remapped
-                press(virt_keyboard, pending_key.remap.tap, config.no_emit)?;
-                release(virt_keyboard, pending_key.remap.tap, config.no_emit)?;
+                press(virt_keyboard, tap, config.no_emit)?;
+                release(virt_keyboard, tap, config.no_emit)?;
             }
+            (_, _, _) => {}
         }
     } else {
-        // Release unmapped
+        // Release unmapped (not pending)
         release(virt_keyboard, key, config.no_emit)?;
     }
     Ok(())
