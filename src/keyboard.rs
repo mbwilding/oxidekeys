@@ -94,7 +94,12 @@ pub(crate) fn process(
         let events = match device.fetch_events() {
             Ok(ev) => ev,
             Err(err) if err.kind() == ErrorKind::WouldBlock => {
-                send_holds_for_all_pending_keys(&mut virt_keyboard, config, &mut pending, &keys_down)?;
+                send_holds_for_all_pending_keys(
+                    &mut virt_keyboard,
+                    config,
+                    &mut pending,
+                    &keys_down,
+                )?;
                 std::thread::sleep(Duration::from_millis(1));
                 continue;
             }
@@ -146,12 +151,16 @@ pub(crate) fn process(
 
                     for (pending_keycode, pending_key) in pending.iter_mut() {
                         let remap = &pending_key.remap;
-                        let is_overlay = remap.hrm != Some(true) && remap.tap.is_some() && remap.hold.is_some();
-                        if is_overlay && !pending_key.hold_sent && key != *pending_keycode && !is_modifier(key) {
-                            if let Some(hold) = &remap.hold {
-                                press_keys(&mut virt_keyboard, hold, config.no_emit)?;
-                                pending_key.hold_sent = true;
-                            }
+                        let is_overlay =
+                            remap.hrm != Some(true) && remap.tap.is_some() && remap.hold.is_some();
+                        if is_overlay
+                            && !pending_key.hold_sent
+                            && key != *pending_keycode
+                            && !is_modifier(key)
+                            && let Some(hold) = &remap.hold
+                        {
+                            press_keys(&mut virt_keyboard, hold, config.no_emit)?;
+                            pending_key.hold_sent = true;
                         }
                     }
 
@@ -321,7 +330,8 @@ fn send_holds_for_all_pending_keys(
         {
             let is_overlay = remap.tap.is_some() && remap.hold.is_some();
             if is_overlay {
-                let other_non_modifiers = keys_down.iter()
+                let other_non_modifiers = keys_down
+                    .iter()
                     .filter(|&&k| k != *pending_keycode && !is_modifier(k))
                     .count();
                 if other_non_modifiers > 0 {
