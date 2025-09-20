@@ -127,17 +127,35 @@ fn default_layers() -> HashMap<String, HashMap<KeyCode, HashMap<KeyCode, Vec<Key
                 // NOTE: Dvorak
                 HashMap::from([
                     // ()
-                    (KeyCode::KEY_F, vec![KeyCode::KEY_RIGHTSHIFT, KeyCode::KEY_9]),
-                    (KeyCode::KEY_J, vec![KeyCode::KEY_RIGHTSHIFT, KeyCode::KEY_0]),
+                    (
+                        KeyCode::KEY_F,
+                        vec![KeyCode::KEY_RIGHTSHIFT, KeyCode::KEY_9],
+                    ),
+                    (
+                        KeyCode::KEY_J,
+                        vec![KeyCode::KEY_RIGHTSHIFT, KeyCode::KEY_0],
+                    ),
                     // {}
-                    (KeyCode::KEY_D, vec![KeyCode::KEY_RIGHTSHIFT, KeyCode::KEY_MINUS]),
-                    (KeyCode::KEY_K, vec![KeyCode::KEY_RIGHTSHIFT, KeyCode::KEY_EQUAL]),
+                    (
+                        KeyCode::KEY_D,
+                        vec![KeyCode::KEY_RIGHTSHIFT, KeyCode::KEY_MINUS],
+                    ),
+                    (
+                        KeyCode::KEY_K,
+                        vec![KeyCode::KEY_RIGHTSHIFT, KeyCode::KEY_EQUAL],
+                    ),
                     // []
                     (KeyCode::KEY_S, vec![KeyCode::KEY_MINUS]),
                     (KeyCode::KEY_L, vec![KeyCode::KEY_EQUAL]),
                     // <>
-                    (KeyCode::KEY_A, vec![KeyCode::KEY_RIGHTSHIFT, KeyCode::KEY_W]),
-                    (KeyCode::KEY_SEMICOLON, vec![KeyCode::KEY_RIGHTSHIFT, KeyCode::KEY_E]),
+                    (
+                        KeyCode::KEY_A,
+                        vec![KeyCode::KEY_RIGHTSHIFT, KeyCode::KEY_W],
+                    ),
+                    (
+                        KeyCode::KEY_SEMICOLON,
+                        vec![KeyCode::KEY_RIGHTSHIFT, KeyCode::KEY_E],
+                    ),
                 ]),
             )]),
         ),
