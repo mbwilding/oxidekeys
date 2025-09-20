@@ -142,7 +142,7 @@ pub(crate) fn process(
                             && !is_modifier(key)
                             && key != *pending_keycode
                         {
-                            let hrm_term = remap.hrm_term.unwrap_or(0);
+                            let hrm_term = remap.hrm_term.unwrap_or(config.hrm_term);
                             let elapsed = pending_key.time_pressed.elapsed();
                             if elapsed >= Duration::from_millis(hrm_term as u64) {
                                 if let Some(hold) = remap.hold {
@@ -252,7 +252,7 @@ fn send_holds_for_all_pending_keys(
     for pending_key in pending.values_mut() {
         let remap = pending_key.remap;
         if remap.hrm == Some(true) {
-            let hrm_term = remap.hrm_term.unwrap_or(0);
+            let hrm_term = remap.hrm_term.unwrap_or(config.hrm_term);
             let elapsed = pending_key.time_pressed.elapsed();
             if let Some(hold) = remap.hold
                 && !pending_key.hold_sent
@@ -300,7 +300,7 @@ fn handle_key_up(
         let is_hrm = remap.hrm == Some(true);
 
         if is_hrm {
-            let hrm_term = remap.hrm_term.unwrap_or(0);
+            let hrm_term = remap.hrm_term.unwrap_or(config.hrm_term);
             let elapsed = pending_key.time_pressed.elapsed();
 
             if elapsed < Duration::from_millis(hrm_term as u64) {

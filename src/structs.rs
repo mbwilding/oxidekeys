@@ -6,6 +6,10 @@ fn default_no_emit() -> bool {
     false
 }
 
+fn default_hrm_term() -> u16 {
+    100
+}
+
 fn default_keyboards() -> HashMap<String, HashMap<KeyCode, RemapAction>> {
     HashMap::from([(
         "AT Translated Set 2 keyboard".to_string(),
@@ -34,7 +38,6 @@ fn default_keyboards() -> HashMap<String, HashMap<KeyCode, RemapAction>> {
                     tap: Some(KeyCode::KEY_A),
                     hold: Some(KeyCode::KEY_LEFTCTRL),
                     hrm: Some(true),
-                    hrm_term: Some(144),
                     ..Default::default()
                 },
             ),
@@ -45,7 +48,6 @@ fn default_keyboards() -> HashMap<String, HashMap<KeyCode, RemapAction>> {
                     tap: Some(KeyCode::KEY_SEMICOLON),
                     hold: Some(KeyCode::KEY_RIGHTCTRL),
                     hrm: Some(true),
-                    hrm_term: Some(144),
                     ..Default::default()
                 },
             ),
@@ -56,7 +58,6 @@ fn default_keyboards() -> HashMap<String, HashMap<KeyCode, RemapAction>> {
                     tap: Some(KeyCode::KEY_S),
                     hold: Some(KeyCode::KEY_LEFTMETA),
                     hrm: Some(true),
-                    hrm_term: Some(144),
                     ..Default::default()
                 },
             ),
@@ -67,7 +68,6 @@ fn default_keyboards() -> HashMap<String, HashMap<KeyCode, RemapAction>> {
                     tap: Some(KeyCode::KEY_L),
                     hold: Some(KeyCode::KEY_RIGHTMETA),
                     hrm: Some(true),
-                    hrm_term: Some(144),
                     ..Default::default()
                 },
             ),
@@ -78,7 +78,6 @@ fn default_keyboards() -> HashMap<String, HashMap<KeyCode, RemapAction>> {
                     tap: Some(KeyCode::KEY_D),
                     hold: Some(KeyCode::KEY_LEFTALT),
                     hrm: Some(true),
-                    hrm_term: Some(144),
                     ..Default::default()
                 },
             ),
@@ -89,7 +88,6 @@ fn default_keyboards() -> HashMap<String, HashMap<KeyCode, RemapAction>> {
                     tap: Some(KeyCode::KEY_K),
                     hold: Some(KeyCode::KEY_RIGHTALT),
                     hrm: Some(true),
-                    hrm_term: Some(144),
                     ..Default::default()
                 },
             ),
@@ -129,6 +127,9 @@ pub(crate) struct Config {
     #[serde(default = "default_no_emit")]
     pub no_emit: bool,
 
+    #[serde(default = "default_hrm_term")]
+    pub hrm_term: u16,
+
     #[serde(default = "default_keyboards")]
     pub keyboards: HashMap<String, HashMap<KeyCode, RemapAction>>,
 
@@ -139,8 +140,9 @@ pub(crate) struct Config {
 impl Default for Config {
     fn default() -> Self {
         Self {
-            keyboards: default_keyboards(),
             no_emit: default_no_emit(),
+            hrm_term: default_hrm_term(),
+            keyboards: default_keyboards(),
             layers: default_layers(),
         }
     }
