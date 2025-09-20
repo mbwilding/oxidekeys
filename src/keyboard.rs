@@ -136,7 +136,7 @@ pub(crate) fn process(
                     flush_keys.clear();
 
                     for (pending_keycode, pending_key) in pending.iter_mut() {
-                        let remap = pending_key.remap;
+                        let remap = &pending_key.remap;
                         if remap.hrm == Some(true)
                             && !pending_key.hold_sent
                             && !is_modifier(key)
@@ -145,8 +145,10 @@ pub(crate) fn process(
                             let hrm_term = remap.hrm_term.unwrap_or(config.hrm_term);
                             let elapsed = pending_key.time_pressed.elapsed();
                             if elapsed >= Duration::from_millis(hrm_term as u64) {
-                                if let Some(hold) = remap.hold {
-                                    press(&mut virt_keyboard, hold, config.no_emit)?;
+                                if let Some(hold) = &remap.hold {
+                                    for key in hold {
+                                        press(&mut virt_keyboard, *key, config.no_emit)?;
+                                    }
                                     pending_key.hold_sent = true;
                                 }
                             } else {
@@ -159,8 +161,10 @@ pub(crate) fn process(
                         if let Some(pending_key) = remove_pending(&mut pending, flush_key) {
                             let remap = pending_key.remap;
                             if let Some(tap) = remap.tap {
-                                press(&mut virt_keyboard, tap, config.no_emit)?;
-                                release(&mut virt_keyboard, tap, config.no_emit)?;
+                                for key in tap {
+                                    press(&mut virt_keyboard, key, config.no_emit)?;
+                                    release(&mut virt_keyboard, key, config.no_emit)?;
+                                }
                             }
                         }
                     }
@@ -259,21 +263,25 @@ fn send_holds_for_all_pending_keys(
     pending: &mut HashMap<KeyCode, PendingKey>,
 ) -> Result<()> {
     for pending_key in pending.values_mut() {
-        let remap = pending_key.remap;
+        let remap = &pending_key.remap;
         if remap.hrm == Some(true) {
             let hrm_term = remap.hrm_term.unwrap_or(config.hrm_term);
             let elapsed = pending_key.time_pressed.elapsed();
-            if let Some(hold) = remap.hold
+            if let Some(hold) = &remap.hold
                 && !pending_key.hold_sent
                 && elapsed >= Duration::from_millis(hrm_term as u64)
             {
-                press(virt_keyboard, hold, config.no_emit)?;
+                for key in hold {
+                    press(virt_keyboard, *key, config.no_emit)?;
+                }
                 pending_key.hold_sent = true;
             }
-        } else if let Some(hold) = remap.hold
+        } else if let Some(hold) = &remap.hold
             && !pending_key.hold_sent
         {
-            press(virt_keyboard, hold, config.no_emit)?;
+            for key in hold {
+                press(virt_keyboard, *key, config.no_emit)?;
+            }
             pending_key.hold_sent = true;
         }
     }
@@ -289,8 +297,8 @@ fn handle_key_down(
 ) -> Result<()> {
     send_holds_for_all_pending_keys(virt_keyboard, config, pending)?;
 
-    if let Some(&remap) = remaps.get(&key) {
-        add_pending(pending, key, remap);
+    if let Some(remap) = remaps.get(&key) {
+        add_pending(pending, key, remap.clone());
     } else {
         press(virt_keyboard, key, config.no_emit)?;
     }
@@ -314,20 +322,28 @@ fn handle_key_up(
 
             if elapsed < Duration::from_millis(hrm_term as u64) {
                 if let Some(tap) = remap.tap {
-                    press(virt_keyboard, tap, config.no_emit)?;
-                    release(virt_keyboard, tap, config.no_emit)?;
+                    for key in tap {
+                        press(virt_keyboard, key, config.no_emit)?;
+                        release(virt_keyboard, key, config.no_emit)?;
+                    }
                 }
             } else if remap.hold.is_some() && pending_key.hold_sent {
-                release(virt_keyboard, remap.hold.unwrap(), config.no_emit)?;
+                for key in remap.hold.unwrap() {
+                    release(virt_keyboard, key, config.no_emit)?;
+                }
             }
         } else {
             match (remap.tap, remap.hold, pending_key.hold_sent) {
                 (_, Some(hold), true) => {
-                    release(virt_keyboard, hold, config.no_emit)?;
+                    for key in hold {
+                        release(virt_keyboard, key, config.no_emit)?;
+                    }
                 }
                 (Some(tap), _, _) => {
-                    press(virt_keyboard, tap, config.no_emit)?;
-                    release(virt_keyboard, tap, config.no_emit)?;
+                    for key in tap {
+                        press(virt_keyboard, key, config.no_emit)?;
+                        release(virt_keyboard, key, config.no_emit)?;
+                    }
                 }
                 _ => {
                     warn!("SHOULD NEVER HIT: {:#?}", key);

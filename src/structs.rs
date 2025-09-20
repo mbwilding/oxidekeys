@@ -18,8 +18,8 @@ fn default_keyboards() -> HashMap<String, HashMap<KeyCode, RemapAction>> {
             (
                 KeyCode::KEY_SPACE,
                 RemapAction {
-                    tap: Some(KeyCode::KEY_SPACE),
-                    hold: Some(KeyCode::KEY_LEFTSHIFT),
+                    tap: Some(vec![KeyCode::KEY_SPACE]),
+                    hold: Some(vec![KeyCode::KEY_LEFTSHIFT]),
                     ..Default::default()
                 },
             ),
@@ -27,7 +27,7 @@ fn default_keyboards() -> HashMap<String, HashMap<KeyCode, RemapAction>> {
             (
                 KeyCode::KEY_LEFTSHIFT,
                 RemapAction {
-                    tap: Some(KeyCode::KEY_ESC),
+                    tap: Some(vec![KeyCode::KEY_ESC]),
                     ..Default::default()
                 },
             ),
@@ -35,7 +35,7 @@ fn default_keyboards() -> HashMap<String, HashMap<KeyCode, RemapAction>> {
             (
                 KeyCode::KEY_CAPSLOCK,
                 RemapAction {
-                    tap: Some(KeyCode::KEY_BACKSPACE),
+                    tap: Some(vec![KeyCode::KEY_BACKSPACE]),
                     ..Default::default()
                 },
             ),
@@ -43,8 +43,8 @@ fn default_keyboards() -> HashMap<String, HashMap<KeyCode, RemapAction>> {
             (
                 KeyCode::KEY_A,
                 RemapAction {
-                    tap: Some(KeyCode::KEY_A),
-                    hold: Some(KeyCode::KEY_LEFTCTRL),
+                    tap: Some(vec![KeyCode::KEY_A]),
+                    hold: Some(vec![KeyCode::KEY_LEFTCTRL]),
                     hrm: Some(true),
                     ..Default::default()
                 },
@@ -53,8 +53,8 @@ fn default_keyboards() -> HashMap<String, HashMap<KeyCode, RemapAction>> {
             (
                 KeyCode::KEY_SEMICOLON,
                 RemapAction {
-                    tap: Some(KeyCode::KEY_SEMICOLON),
-                    hold: Some(KeyCode::KEY_RIGHTCTRL),
+                    tap: Some(vec![KeyCode::KEY_SEMICOLON]),
+                    hold: Some(vec![KeyCode::KEY_RIGHTCTRL]),
                     hrm: Some(true),
                     ..Default::default()
                 },
@@ -63,8 +63,8 @@ fn default_keyboards() -> HashMap<String, HashMap<KeyCode, RemapAction>> {
             (
                 KeyCode::KEY_S,
                 RemapAction {
-                    tap: Some(KeyCode::KEY_S),
-                    hold: Some(KeyCode::KEY_LEFTMETA),
+                    tap: Some(vec![KeyCode::KEY_S]),
+                    hold: Some(vec![KeyCode::KEY_LEFTMETA]),
                     hrm: Some(true),
                     ..Default::default()
                 },
@@ -73,8 +73,8 @@ fn default_keyboards() -> HashMap<String, HashMap<KeyCode, RemapAction>> {
             (
                 KeyCode::KEY_L,
                 RemapAction {
-                    tap: Some(KeyCode::KEY_L),
-                    hold: Some(KeyCode::KEY_RIGHTMETA),
+                    tap: Some(vec![KeyCode::KEY_L]),
+                    hold: Some(vec![KeyCode::KEY_RIGHTMETA]),
                     hrm: Some(true),
                     ..Default::default()
                 },
@@ -83,8 +83,8 @@ fn default_keyboards() -> HashMap<String, HashMap<KeyCode, RemapAction>> {
             (
                 KeyCode::KEY_D,
                 RemapAction {
-                    tap: Some(KeyCode::KEY_D),
-                    hold: Some(KeyCode::KEY_LEFTALT),
+                    tap: Some(vec![KeyCode::KEY_D]),
+                    hold: Some(vec![KeyCode::KEY_LEFTALT]),
                     hrm: Some(true),
                     ..Default::default()
                 },
@@ -93,8 +93,8 @@ fn default_keyboards() -> HashMap<String, HashMap<KeyCode, RemapAction>> {
             (
                 KeyCode::KEY_K,
                 RemapAction {
-                    tap: Some(KeyCode::KEY_K),
-                    hold: Some(KeyCode::KEY_RIGHTALT),
+                    tap: Some(vec![KeyCode::KEY_K]),
+                    hold: Some(vec![KeyCode::KEY_RIGHTALT]),
                     hrm: Some(true),
                     ..Default::default()
                 },
@@ -188,15 +188,15 @@ impl Default for Config {
     }
 }
 
-#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub(crate) struct RemapAction {
     /// Tap key
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub tap: Option<KeyCode>,
+    pub tap: Option<Vec<KeyCode>>,
 
     /// Hold key
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub hold: Option<KeyCode>,
+    pub hold: Option<Vec<KeyCode>>,
 
     /// Homerow Mod
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -210,7 +210,7 @@ pub(crate) struct RemapAction {
 impl Default for RemapAction {
     fn default() -> Self {
         Self {
-            tap: Some(KeyCode::KEY_RESERVED),
+            tap: Some(vec![KeyCode::KEY_RESERVED]),
             hold: None,
             hrm: None,
             hrm_term: None,
