@@ -9,6 +9,7 @@ use evdev::{EventType, KeyCode};
 use std::collections::HashMap;
 use std::sync::Arc;
 use std::sync::Mutex;
+use std::thread;
 use udev::Enumerator;
 use uinput::device::Device as UInputDevice;
 
@@ -107,8 +108,20 @@ fn main() -> Result<()> {
     let devices = open_keyboard_devices(&config)?;
     let virt_keyboard = Arc::new(Mutex::new(create_virtual_keyboard()?));
 
+    let mut handles = Vec::new();
     for device in devices {
-        process(device.0, virt_keyboard.clone(), &device.1, &config)?;
+        let virt_keyboard = virt_keyboard.clone();
+        let ev_dev_device = device.0;
+        let remaps = device.1.clone();
+        let config = config.clone();
+        let handle = thread::spawn(move || {
+            process(ev_dev_device, virt_keyboard, &remaps, &config).unwrap();
+        });
+        handles.push(handle);
+    }
+
+    for handle in handles {
+        handle.join().unwrap();
     }
 
     Ok(())
@@ -117,7 +130,7 @@ fn main() -> Result<()> {
 fn process(
     mut device: EvDevDevice,
     virt_keyboard: Arc<Mutex<UInputDevice>>,
-    keyboard: &HashMap<KeyCode, RemapAction>,
+    remaps: &HashMap<KeyCode, RemapAction>,
     config: &Config,
 ) -> Result<()> {
     let mut pending: HashMap<KeyCode, PendingKey> = HashMap::new();
@@ -134,9 +147,9 @@ fn process(
             let key = KeyCode(ev.code());
 
             if state == PRESS {
-                handle_press(&mut virt_keyboard, config, keyboard, &mut pending, key)?;
+                handle_press(&mut virt_keyboard, config, remaps, &mut pending, key)?;
             } else if state == RELEASE {
-                handle_release(&mut virt_keyboard, config, keyboard, &mut pending, key)?;
+                handle_release(&mut virt_keyboard, config, remaps, &mut pending, key)?;
             }
         }
     }
@@ -145,11 +158,11 @@ fn process(
 fn handle_press(
     virt_keyboard: &mut UInputDevice,
     config: &Config,
-    keyboard: &HashMap<KeyCode, RemapAction>,
+    remaps: &HashMap<KeyCode, RemapAction>,
     pending: &mut HashMap<KeyCode, PendingKey>,
     key: KeyCode,
 ) -> Result<()> {
-    if let Some(&remap) = keyboard.get(&key) {
+    if let Some(&remap) = remaps.get(&key) {
         if remap.hold.is_some() {
             pending.insert(
                 key,
@@ -190,7 +203,7 @@ fn send_holds_for_pending_keys(
 fn handle_release(
     virt_keyboard: &mut UInputDevice,
     config: &Config,
-    keyboard: &HashMap<KeyCode, RemapAction>,
+    remaps: &HashMap<KeyCode, RemapAction>,
     pending: &mut HashMap<KeyCode, PendingKey>,
     key: KeyCode,
 ) -> Result<()> {
@@ -210,7 +223,7 @@ fn handle_release(
             press(virt_keyboard, hold_code, config.no_emit)?;
             release(virt_keyboard, hold_code, config.no_emit)?;
         }
-    } else if let Some(&remap) = keyboard.get(&key) {
+    } else if let Some(&remap) = remaps.get(&key) {
         release(virt_keyboard, remap.tap, config.no_emit)?;
     } else {
         release(virt_keyboard, key, config.no_emit)?;
