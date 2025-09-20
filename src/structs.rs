@@ -30,6 +30,7 @@ fn default_keyboards() -> HashMap<String, HashMap<KeyCode, RemapAction>> {
                     ..Default::default()
                 },
             ),
+            #[allow(clippy::needless_update)]
             (
                 KeyCode::KEY_A,
                 RemapAction {
