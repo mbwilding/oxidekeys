@@ -90,41 +90,6 @@ fn process(mut device: EvDevDevice, mut virt_keyboard: UInputDevice, config: Con
     let mut pending: HashMap<KeyCode, PendingKey> = HashMap::new();
 
     loop {
-        // let now = Instant::now();
-        // let next_expiry = pending
-        //     .values()
-        //     .filter(|pending_key| !pending_key.hold_sent)
-        //     .filter_map(|pending_key| {
-        //         if let Some(tt) = pending_key.remap.tapping_term_duration() {
-        //             let expiry = pending_key.start + tt;
-        //             if expiry > now { Some(expiry) } else { None }
-        //         } else {
-        //             None
-        //         }
-        //     })
-        //     .min();
-        //
-        // let timeout = next_expiry
-        //     .map(|expiry| expiry.saturating_duration_since(now))
-        //     .unwrap_or(Duration::from_secs(60));
-        // let poll_timeout = PollTimeout::try_from(timeout.as_millis())?;
-        // let fd = device.as_fd();
-        // let mut poll_fds = [PollFd::new(fd, PollFlags::POLLIN)];
-        // let poll_res = poll(&mut poll_fds, poll_timeout)?;
-        //
-        // // Handle timer holds
-        // for pending_key in pending.values_mut() {
-        //     if !pending_key.hold_sent
-        //         && let Some(tapping_term) = pending_key.remap.tapping_term
-        //         && now.duration_since(pending_key.start)
-        //             > Duration::from_millis(tapping_term as u64)
-        //         && let Some(hold_code) = pending_key.remap.hold
-        //     {
-        //         press(&mut virt_keyboard, hold_code, config.no_emit)?;
-        //         pending_key.hold_sent = true;
-        //     }
-        // }
-
         let events = device.fetch_events()?;
         for ev in events {
             if ev.event_type() != EventType::KEY {
@@ -136,9 +101,7 @@ fn process(mut device: EvDevDevice, mut virt_keyboard: UInputDevice, config: Con
 
             if state == PRESS {
                 if let Some(&remap) = config.remaps.get(&key) {
-                    // Tap/hold/overlap logic
                     if remap.hold.is_some() {
-                        // Insert pending key
                         pending.insert(
                             key,
                             PendingKey {
@@ -150,7 +113,6 @@ fn process(mut device: EvDevDevice, mut virt_keyboard: UInputDevice, config: Con
                         press(&mut virt_keyboard, remap.tap, config.no_emit)?;
                     }
                 } else {
-                    // Check for overlap triggers
                     for (_pending_keycode, pending_key) in pending.iter_mut() {
                         let remap = pending_key.remap;
                         if remap.hold.is_some()
