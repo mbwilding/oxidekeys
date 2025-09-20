@@ -4,6 +4,7 @@ use anyhow::{Result, anyhow, bail};
 use evdev::Device as EvDevDevice;
 use evdev::{EventType, KeyCode};
 use log::{debug, info};
+use std::collections::HashSet;
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 use std::{collections::HashMap, time::Instant};
@@ -77,6 +78,21 @@ pub(crate) fn create_virtual_keyboard() -> Result<UInputDevice> {
     Ok(device)
 }
 
+pub(crate) fn is_modifier(key: KeyCode) -> bool {
+    matches!(
+        KeyCode::new(key.0),
+        KeyCode::KEY_LEFTSHIFT
+            | KeyCode::KEY_RIGHTSHIFT
+            | KeyCode::KEY_LEFTCTRL
+            | KeyCode::KEY_RIGHTCTRL
+            | KeyCode::KEY_LEFTALT
+            | KeyCode::KEY_RIGHTALT
+            | KeyCode::KEY_LEFTMETA
+            | KeyCode::KEY_RIGHTMETA
+            | KeyCode::KEY_CAPSLOCK
+    )
+}
+
 pub(crate) fn process(
     mut device: EvDevDevice,
     virt_keyboard: Arc<Mutex<UInputDevice>>,
@@ -84,6 +100,7 @@ pub(crate) fn process(
     config: &Config,
 ) -> Result<()> {
     let mut pending: HashMap<KeyCode, PendingKey> = HashMap::new();
+    let mut keys_down = HashSet::new();
 
     loop {
         let events = device.fetch_events()?;
@@ -97,8 +114,32 @@ pub(crate) fn process(
             let key = KeyCode(ev.code());
 
             match state {
-                PRESS => handle_key_down(&mut virt_keyboard, config, &mut pending, key, remaps)?,
-                RELEASE => handle_key_up(&mut virt_keyboard, config, &mut pending, key)?,
+                PRESS => {
+                    let mut flush_keys = Vec::new();
+                    for (pending_keycode, pending_key) in pending.iter() {
+                        let remap = pending_key.remap;
+                        if remap.hrm == Some(true) && !pending_key.hold_sent {
+                            if !is_modifier(key) && key != *pending_keycode {
+                                flush_keys.push(*pending_keycode);
+                            }
+                        }
+                    }
+                    for flush_key in flush_keys {
+                        if let Some(pending_key) = remove_pending(&mut pending, &flush_key) {
+                            let remap = pending_key.remap;
+                            if let Some(tap) = remap.tap {
+                                press(&mut virt_keyboard, tap, config.no_emit)?;
+                                release(&mut virt_keyboard, tap, config.no_emit)?;
+                            }
+                        }
+                    }
+                    keys_down.insert(key);
+                    handle_key_down(&mut virt_keyboard, config, &mut pending, key, remaps)?;
+                }
+                RELEASE => {
+                    keys_down.remove(&key);
+                    handle_key_up(&mut virt_keyboard, config, &mut pending, key)?;
+                }
                 _ => {}
             }
         }
@@ -179,12 +220,14 @@ pub(crate) fn handle_key_down(
     key: KeyCode,
     remaps: &HashMap<KeyCode, RemapAction>,
 ) -> Result<()> {
+    send_holds_for_all_pending_keys(virt_keyboard, config, pending)?;
+
     if let Some(&remap) = remaps.get(&key) {
         add_pending(pending, key, remap);
     } else {
-        send_holds_for_all_pending_keys(virt_keyboard, config, pending)?;
         press(virt_keyboard, key, config.no_emit)?;
     }
+
     Ok(())
 }
 
@@ -202,15 +245,12 @@ pub(crate) fn handle_key_up(
             let hrm_term = remap.hrm_term.unwrap_or(0);
             let elapsed = pending_key.time_pressed.elapsed();
 
-            // Homerow Mod logic: tap vs hold depending on time held
             if elapsed < Duration::from_millis(hrm_term as u64) {
-                // Tap: send tap key press and release
                 if let Some(tap) = remap.tap {
                     press(virt_keyboard, tap, config.no_emit)?;
                     release(virt_keyboard, tap, config.no_emit)?;
                 }
             } else {
-                // Hold: release hold if it was sent
                 if remap.hold.is_some() && pending_key.hold_sent {
                     release(virt_keyboard, remap.hold.unwrap(), config.no_emit)?;
                 }
@@ -228,7 +268,6 @@ pub(crate) fn handle_key_up(
             }
         }
     } else {
-        // Release unmapped (not pending)
         release(virt_keyboard, key, config.no_emit)?;
     }
     Ok(())
