@@ -150,12 +150,11 @@ pub(crate) fn send_holds_for_all_pending_keys(
     pending: &mut HashMap<KeyCode, PendingKey>,
 ) -> Result<()> {
     for pending_key in pending.values_mut() {
-        if let Some(hold_code) = pending_key.remap.hold {
-            if !pending_key.hold_sent {
+        if let Some(hold_code) = pending_key.remap.hold
+            && !pending_key.hold_sent {
                 press(virt_keyboard, hold_code, config.no_emit)?;
                 pending_key.hold_sent = true;
             }
-        }
     }
     Ok(())
 }
@@ -197,7 +196,9 @@ pub(crate) fn handle_key_release(
             }
             (Some(hold_code), false) => {
                 // Treat as tap
-                press(virt_keyboard, pending_key.remap.tap, config.no_emit)?; release(virt_keyboard, pending_key.remap.tap, config.no_emit)?; }
+                press(virt_keyboard, pending_key.remap.tap, config.no_emit)?;
+                release(virt_keyboard, pending_key.remap.tap, config.no_emit)?;
+            }
             (None, _) => {
                 // No hold, just tap logic (shouldn't happen for pending)
                 press(virt_keyboard, pending_key.remap.tap, config.no_emit)?;
