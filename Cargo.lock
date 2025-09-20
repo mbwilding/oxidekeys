@@ -252,21 +252,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "interception-rust"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "dirs",
- "env_logger",
- "evdev",
- "log",
- "serde",
- "serde_yaml",
- "udev",
- "uinput",
-]
-
-[[package]]
 name = "io-lifetimes"
 version = "1.0.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -326,6 +311,21 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn",
+]
+
+[[package]]
+name = "keyflect"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "dirs",
+ "env_logger",
+ "evdev",
+ "log",
+ "serde",
+ "serde_yaml",
+ "udev",
+ "uinput",
 ]
 
 [[package]]
