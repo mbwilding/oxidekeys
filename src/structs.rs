@@ -30,16 +30,16 @@ fn default_keyboards() -> HashMap<String, HashMap<KeyCode, RemapAction>> {
                     ..Default::default()
                 },
             ),
-            // (
-            //     KeyCode::KEY_A,
-            //     RemapAction {
-            //         tap: Some(KeyCode::KEY_A),
-            //         hold: Some(KeyCode::KEY_LEFTCTRL),
-            //         hrm: Some(true),
-            //         hrm_term: Some(144),
-            //         ..Default::default()
-            //     },
-            // ),
+            (
+                KeyCode::KEY_A,
+                RemapAction {
+                    tap: Some(KeyCode::KEY_A),
+                    hold: Some(KeyCode::KEY_LEFTCTRL),
+                    hrm: Some(true),
+                    hrm_term: Some(144),
+                    ..Default::default()
+                },
+            ),
         ]
         .into_iter()
         .collect::<HashMap<KeyCode, RemapAction>>(),

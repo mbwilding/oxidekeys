@@ -5,6 +5,7 @@ use evdev::Device as EvDevDevice;
 use evdev::{EventType, KeyCode};
 use log::{debug, info};
 use std::sync::{Arc, Mutex};
+use std::time::Duration;
 use std::{collections::HashMap, time::Instant};
 use udev::Enumerator;
 use uinput::device::Device as UInputDevice;
@@ -96,7 +97,7 @@ pub(crate) fn process(
             let key = KeyCode(ev.code());
 
             match state {
-                PRESS => handle_key_down(&mut virt_keyboard, config, remaps, &mut pending, key)?,
+                PRESS => handle_key_down(&mut virt_keyboard, config, &mut pending, key, remaps)?,
                 RELEASE => handle_key_up(&mut virt_keyboard, config, &mut pending, key)?,
                 _ => {}
             }
@@ -149,11 +150,23 @@ pub(crate) fn send_holds_for_all_pending_keys(
     pending: &mut HashMap<KeyCode, PendingKey>,
 ) -> Result<()> {
     for pending_key in pending.values_mut() {
-        if let Some(hold_code) = pending_key.remap.hold
-            && !pending_key.hold_sent
-        {
-            press(virt_keyboard, hold_code, config.no_emit)?;
-            pending_key.hold_sent = true;
+        let remap = pending_key.remap;
+        if remap.hrm == Some(true) {
+            let hrm_term = remap.hrm_term.unwrap_or(0);
+            let elapsed = pending_key.time_pressed.elapsed();
+            if let Some(hold) = remap.hold {
+                if !pending_key.hold_sent && elapsed >= Duration::from_millis(hrm_term as u64) {
+                    press(virt_keyboard, hold, config.no_emit)?;
+                    pending_key.hold_sent = true;
+                }
+            }
+        } else {
+            if let Some(hold) = remap.hold {
+                if !pending_key.hold_sent {
+                    press(virt_keyboard, hold, config.no_emit)?;
+                    pending_key.hold_sent = true;
+                }
+            }
         }
     }
     Ok(())
@@ -162,9 +175,9 @@ pub(crate) fn send_holds_for_all_pending_keys(
 pub(crate) fn handle_key_down(
     virt_keyboard: &mut UInputDevice,
     config: &Config,
-    remaps: &HashMap<KeyCode, RemapAction>,
     pending: &mut HashMap<KeyCode, PendingKey>,
     key: KeyCode,
+    remaps: &HashMap<KeyCode, RemapAction>,
 ) -> Result<()> {
     if let Some(&remap) = remaps.get(&key) {
         add_pending(pending, key, remap);
@@ -182,27 +195,37 @@ pub(crate) fn handle_key_up(
     key: KeyCode,
 ) -> Result<()> {
     if let Some(pending_key) = remove_pending(pending, &key) {
-        match (
-            pending_key.remap.hrm,
-            pending_key.remap.tap,
-            pending_key.remap.hold,
-            pending_key.hold_sent,
-        ) {
-            // HRM (TODO: add logic for HRM branches, use from pending_key time_pressed and
-            // pending_key.remap.hmr_term which is an Option<Instant>)
+        let remap = pending_key.remap;
+        let is_hrm = remap.hrm == Some(true);
 
-            // No HRM
-            (_, _, Some(hold), true) => {
-                // Release hold remapped
-                release(virt_keyboard, hold, config.no_emit)?;
-            }
-            (_, Some(tap), _, _) => {
-                // Tap remapped
-                press(virt_keyboard, tap, config.no_emit)?;
-                release(virt_keyboard, tap, config.no_emit)?;
-            }
+        if is_hrm {
+            let hrm_term = remap.hrm_term.unwrap_or(0);
+            let elapsed = pending_key.time_pressed.elapsed();
 
-            (_, _, _, _) => {}
+            // Homerow Mod logic: tap vs hold depending on time held
+            if elapsed < Duration::from_millis(hrm_term as u64) {
+                // Tap: send tap key press and release
+                if let Some(tap) = remap.tap {
+                    press(virt_keyboard, tap, config.no_emit)?;
+                    release(virt_keyboard, tap, config.no_emit)?;
+                }
+            } else {
+                // Hold: release hold if it was sent
+                if remap.hold.is_some() && pending_key.hold_sent {
+                    release(virt_keyboard, remap.hold.unwrap(), config.no_emit)?;
+                }
+            }
+        } else {
+            match (remap.tap, remap.hold, pending_key.hold_sent) {
+                (_, Some(hold), true) => {
+                    release(virt_keyboard, hold, config.no_emit)?;
+                }
+                (Some(tap), _, _) => {
+                    press(virt_keyboard, tap, config.no_emit)?;
+                    release(virt_keyboard, tap, config.no_emit)?;
+                }
+                _ => {}
+            }
         }
     } else {
         // Release unmapped (not pending)
