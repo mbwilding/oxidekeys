@@ -17,6 +17,14 @@ Utilizes `uinput` for virtualizing the keyboard.
 cargo install --locked oxidekeys
 ```
 
+## Setup
+
+```bash
+sudo usermod -aG input $USER
+echo 'KERNEL=="uinput", MODE="0660", GROUP="input"' | sudo tee /etc/udev/rules.d/99-uinput.rules > /dev/null
+echo uinput | sudo tee /etc/modules-load.d/uinput.conf > /dev/null
+```
+
 ## Config
 
 Default config location: `~/.config/oxidekeys/config.yml`
