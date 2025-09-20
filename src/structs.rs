@@ -7,7 +7,7 @@ fn default_no_emit() -> bool {
 }
 
 fn default_hrm_term() -> u16 {
-    120
+    144
 }
 
 fn default_keyboards() -> HashMap<String, HashMap<KeyCode, RemapAction>> {
