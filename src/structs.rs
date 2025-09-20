@@ -7,7 +7,7 @@ fn default_no_emit() -> bool {
 }
 
 fn default_hrm_term() -> u16 {
-    144
+    130
 }
 
 fn default_keyboards() -> HashMap<String, HashMap<KeyCode, RemapAction>> {
@@ -28,6 +28,14 @@ fn default_keyboards() -> HashMap<String, HashMap<KeyCode, RemapAction>> {
                 KeyCode::KEY_LEFTSHIFT,
                 RemapAction {
                     tap: Some(KeyCode::KEY_ESC),
+                    ..Default::default()
+                },
+            ),
+            #[allow(clippy::needless_update)]
+            (
+                KeyCode::KEY_CAPSLOCK,
+                RemapAction {
+                    tap: Some(KeyCode::KEY_BACKSPACE),
                     ..Default::default()
                 },
             ),
@@ -88,15 +96,6 @@ fn default_keyboards() -> HashMap<String, HashMap<KeyCode, RemapAction>> {
                     tap: Some(KeyCode::KEY_K),
                     hold: Some(KeyCode::KEY_RIGHTALT),
                     hrm: Some(true),
-                    ..Default::default()
-                },
-            ),
-            #[allow(clippy::needless_update)]
-            (
-                KeyCode::KEY_CAPSLOCK,
-                RemapAction {
-                    tap: Some(KeyCode::KEY_BACKSPACE),
-                    hold: Some(KeyCode::KEY_LEFTCTRL),
                     ..Default::default()
                 },
             ),
