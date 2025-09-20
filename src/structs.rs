@@ -109,40 +109,35 @@ fn default_layers() -> HashMap<String, HashMap<KeyCode, HashMap<KeyCode, KeyCode
     HashMap::from([
         (
             "Navigation".to_string(),
-            HashMap::from([
-                (
-                    KeyCode::KEY_RIGHTALT,
-                    HashMap::from([
-                        // NOTE: Dvorak
-                        (KeyCode::KEY_J, KeyCode::KEY_LEFT),
-                        (KeyCode::KEY_C, KeyCode::KEY_DOWN),
-                        (KeyCode::KEY_V, KeyCode::KEY_UP),
-                        (KeyCode::KEY_P, KeyCode::KEY_RIGHT),
-                    ]),
-                ),
-            ]),
+            HashMap::from([(
+                KeyCode::KEY_RIGHTALT,
+                HashMap::from([
+                    // NOTE: Dvorak
+                    (KeyCode::KEY_J, KeyCode::KEY_LEFT),
+                    (KeyCode::KEY_C, KeyCode::KEY_DOWN),
+                    (KeyCode::KEY_V, KeyCode::KEY_UP),
+                    (KeyCode::KEY_P, KeyCode::KEY_RIGHT),
+                ]),
+            )]),
         ),
         (
             "Symbols".to_string(),
-            HashMap::from([
-                (
-                    KeyCode::KEY_LEFTALT,
-                    HashMap::from([
-                        // ()
-                        (KeyCode::KEY_F, KeyCode::KEY_KPLEFTPAREN),
-                        (KeyCode::KEY_J, KeyCode::KEY_KPRIGHTPAREN),
-                        // {}
-                        (KeyCode::KEY_D, KeyCode::KEY_LEFTBRACE),
-                        (KeyCode::KEY_K, KeyCode::KEY_RIGHTBRACE),
-                        // TODO: []
-                        // TODO: <>
-                    ]),
-                ),
-            ]),
+            HashMap::from([(
+                KeyCode::KEY_LEFTALT,
+                HashMap::from([
+                    // ()
+                    (KeyCode::KEY_F, KeyCode::KEY_KPLEFTPAREN),
+                    (KeyCode::KEY_J, KeyCode::KEY_KPRIGHTPAREN),
+                    // {}
+                    (KeyCode::KEY_D, KeyCode::KEY_LEFTBRACE),
+                    (KeyCode::KEY_K, KeyCode::KEY_RIGHTBRACE),
+                    // TODO: []
+                    // TODO: <>
+                ]),
+            )]),
         ),
     ])
 }
-
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub(crate) struct Config {
