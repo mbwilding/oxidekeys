@@ -140,12 +140,11 @@ fn send_holds_for_pending_keys(
 ) -> Result<()> {
     for (_pending_keycode, pending_key) in pending.iter_mut() {
         let remap = pending_key.remap;
-        if remap.hold.is_some() && !pending_key.hold_sent && remap.hold.is_some() {
-            if let Some(hold_code) = remap.hold {
+        if remap.hold.is_some() && !pending_key.hold_sent && remap.hold.is_some()
+            && let Some(hold_code) = remap.hold {
                 press(virt_keyboard, hold_code, config.no_emit)?;
                 pending_key.hold_sent = true;
             }
-        }
     }
     Ok(())
 }
