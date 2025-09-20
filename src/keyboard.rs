@@ -78,21 +78,6 @@ pub(crate) fn create_virtual_keyboard() -> Result<UInputDevice> {
     Ok(device)
 }
 
-pub(crate) fn is_modifier(key: KeyCode) -> bool {
-    matches!(
-        KeyCode::new(key.0),
-        KeyCode::KEY_LEFTSHIFT
-            | KeyCode::KEY_RIGHTSHIFT
-            | KeyCode::KEY_LEFTCTRL
-            | KeyCode::KEY_RIGHTCTRL
-            | KeyCode::KEY_LEFTALT
-            | KeyCode::KEY_RIGHTALT
-            | KeyCode::KEY_LEFTMETA
-            | KeyCode::KEY_RIGHTMETA
-            | KeyCode::KEY_CAPSLOCK
-    )
-}
-
 pub(crate) fn process(
     mut device: EvDevDevice,
     virt_keyboard: Arc<Mutex<UInputDevice>>,
@@ -199,6 +184,21 @@ pub(crate) fn process(
     }
 }
 
+fn is_modifier(key: KeyCode) -> bool {
+    matches!(
+        KeyCode::new(key.0),
+        KeyCode::KEY_LEFTSHIFT
+            | KeyCode::KEY_RIGHTSHIFT
+            | KeyCode::KEY_LEFTCTRL
+            | KeyCode::KEY_RIGHTCTRL
+            | KeyCode::KEY_LEFTALT
+            | KeyCode::KEY_RIGHTALT
+            | KeyCode::KEY_LEFTMETA
+            | KeyCode::KEY_RIGHTMETA
+            | KeyCode::KEY_CAPSLOCK
+    )
+}
+
 fn resolve_layered_key(key: KeyCode, active_layers: &HashSet<String>, config: &Config) -> KeyCode {
     for layer in active_layers {
         if let Some(layer_map) = config.layers.get(layer) {
@@ -212,7 +212,7 @@ fn resolve_layered_key(key: KeyCode, active_layers: &HashSet<String>, config: &C
     key
 }
 
-pub(crate) fn press(device: &mut UInputDevice, code: KeyCode, no_emit: bool) -> Result<()> {
+fn press(device: &mut UInputDevice, code: KeyCode, no_emit: bool) -> Result<()> {
     if no_emit {
         return Ok(());
     }
@@ -222,7 +222,7 @@ pub(crate) fn press(device: &mut UInputDevice, code: KeyCode, no_emit: bool) -> 
     Ok(())
 }
 
-pub(crate) fn release(device: &mut UInputDevice, code: KeyCode, no_emit: bool) -> Result<()> {
+fn release(device: &mut UInputDevice, code: KeyCode, no_emit: bool) -> Result<()> {
     if no_emit {
         return Ok(());
     }
@@ -232,11 +232,7 @@ pub(crate) fn release(device: &mut UInputDevice, code: KeyCode, no_emit: bool) -
     Ok(())
 }
 
-pub(crate) fn add_pending(
-    pending: &mut HashMap<KeyCode, PendingKey>,
-    key: KeyCode,
-    remap: RemapAction,
-) {
+fn add_pending(pending: &mut HashMap<KeyCode, PendingKey>, key: KeyCode, remap: RemapAction) {
     pending.entry(key).or_insert(PendingKey {
         remap,
         hold_sent: false,
@@ -244,14 +240,11 @@ pub(crate) fn add_pending(
     });
 }
 
-pub(crate) fn remove_pending(
-    pending: &mut HashMap<KeyCode, PendingKey>,
-    key: &KeyCode,
-) -> Option<PendingKey> {
+fn remove_pending(pending: &mut HashMap<KeyCode, PendingKey>, key: &KeyCode) -> Option<PendingKey> {
     pending.remove(key)
 }
 
-pub(crate) fn send_holds_for_all_pending_keys(
+fn send_holds_for_all_pending_keys(
     virt_keyboard: &mut UInputDevice,
     config: &Config,
     pending: &mut HashMap<KeyCode, PendingKey>,
@@ -278,7 +271,7 @@ pub(crate) fn send_holds_for_all_pending_keys(
     Ok(())
 }
 
-pub(crate) fn handle_key_down(
+fn handle_key_down(
     virt_keyboard: &mut UInputDevice,
     config: &Config,
     pending: &mut HashMap<KeyCode, PendingKey>,
@@ -296,7 +289,7 @@ pub(crate) fn handle_key_down(
     Ok(())
 }
 
-pub(crate) fn handle_key_up(
+fn handle_key_up(
     virt_keyboard: &mut UInputDevice,
     config: &Config,
     pending: &mut HashMap<KeyCode, PendingKey>,
