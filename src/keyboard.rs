@@ -183,20 +183,35 @@ pub(crate) fn handle_key_up(
 ) -> Result<()> {
     if let Some(pending_key) = remove_pending(pending, &key) {
         match (
+            pending_key.remap.hrm,
             pending_key.remap.tap,
             pending_key.remap.hold,
             pending_key.hold_sent,
         ) {
-            (_, Some(hold), true) => {
+            // No HRM
+            (Some(false), _, Some(hold), true) => {
                 // Release hold remapped
                 release(virt_keyboard, hold, config.no_emit)?;
             }
-            (Some(tap), _, _) => {
+            (Some(false), Some(tap), _, _) => {
                 // Tap remapped
                 press(virt_keyboard, tap, config.no_emit)?;
                 release(virt_keyboard, tap, config.no_emit)?;
             }
-            (_, _, _) => {}
+
+            // HRM (TODO: Adjust logic, use from pending_key time_pressed and
+            // pending_key.remap.hmr_term which is an Option<Instant>)
+            (Some(true), _, Some(hold), true) => {
+                // Release hold remapped
+                release(virt_keyboard, hold, config.no_emit)?;
+            }
+            (Some(true), Some(tap), _, _) => {
+                // Tap remapped
+                press(virt_keyboard, tap, config.no_emit)?;
+                release(virt_keyboard, tap, config.no_emit)?;
+            }
+
+            (_, _, _, _) => {}
         }
     } else {
         // Release unmapped (not pending)

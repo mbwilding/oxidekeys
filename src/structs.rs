@@ -33,7 +33,7 @@ fn default_keyboards() -> HashMap<String, HashMap<KeyCode, RemapAction>> {
             // (
             //     KeyCode::KEY_A,
             //     RemapAction {
-            //         tap: KeyCode::KEY_A,
+            //         tap: Some(KeyCode::KEY_A),
             //         hold: Some(KeyCode::KEY_LEFTCTRL),
             //         hrm: Some(true),
             //         hrm_term: Some(144),
