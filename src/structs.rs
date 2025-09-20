@@ -163,6 +163,15 @@ fn default_layers() -> HashMap<String, HashMap<KeyCode, HashMap<KeyCode, Vec<Key
                         KeyCode::KEY_SEMICOLON,
                         vec![KeyCode::KEY_RIGHTSHIFT, KeyCode::KEY_E],
                     ),
+                    // /\
+                    (
+                        KeyCode::KEY_G,
+                        vec![KeyCode::KEY_LEFTBRACE],
+                    ),
+                    (
+                        KeyCode::KEY_H,
+                        vec![KeyCode::KEY_BACKSLASH],
+                    ),
                 ]),
             )]),
         ),
