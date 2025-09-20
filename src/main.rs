@@ -11,6 +11,7 @@ use std::fs;
 use std::sync::Arc;
 use std::sync::Mutex;
 use std::thread;
+use std::time::Instant;
 use udev::Enumerator;
 use uinput::device::Device as UInputDevice;
 
@@ -184,6 +185,7 @@ fn handle_press(
                 PendingKey {
                     remap,
                     hold_sent: false,
+                    time_pressed: Instant::now(),
                 },
             );
         } else {

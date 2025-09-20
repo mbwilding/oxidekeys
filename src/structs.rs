@@ -1,6 +1,6 @@
 use evdev::KeyCode;
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
+use std::{collections::HashMap, time::Instant};
 
 fn default_keyboards() -> HashMap<String, HashMap<KeyCode, RemapAction>> {
     HashMap::from([(
@@ -11,7 +11,7 @@ fn default_keyboards() -> HashMap<String, HashMap<KeyCode, RemapAction>> {
                 RemapAction {
                     tap: KeyCode::KEY_SPACE,
                     hold: Some(KeyCode::KEY_LEFTSHIFT),
-                    hrm: None,
+                    ..Default::default()
                 },
             ),
             (
@@ -19,7 +19,7 @@ fn default_keyboards() -> HashMap<String, HashMap<KeyCode, RemapAction>> {
                 RemapAction {
                     tap: KeyCode::KEY_ESC,
                     hold: Some(KeyCode::KEY_LEFTMETA),
-                    hrm: None,
+                    ..Default::default()
                 },
             ),
             (
@@ -27,7 +27,17 @@ fn default_keyboards() -> HashMap<String, HashMap<KeyCode, RemapAction>> {
                 RemapAction {
                     tap: KeyCode::KEY_BACKSPACE,
                     hold: Some(KeyCode::KEY_LEFTCTRL),
-                    hrm: None,
+                    ..Default::default()
+                },
+            ),
+            (
+                KeyCode::KEY_A,
+                RemapAction {
+                    tap: KeyCode::KEY_A,
+                    hold: Some(KeyCode::KEY_LEFTCTRL),
+                    hrm: Some(true),
+                    hrm_term: Some(144),
+                    ..Default::default()
                 },
             ),
         ]
@@ -67,6 +77,9 @@ pub(crate) struct RemapAction {
     /// Homerow Mod
     #[serde(skip_serializing_if = "Option::is_none")]
     pub hrm: Option<bool>,
+    /// Homerow Mod Term
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub hrm_term: Option<u16>,
 }
 
 impl Default for RemapAction {
@@ -75,6 +88,7 @@ impl Default for RemapAction {
             tap: KeyCode::KEY_RESERVED,
             hold: None,
             hrm: None,
+            hrm_term: None,
         }
     }
 }
@@ -82,4 +96,5 @@ impl Default for RemapAction {
 pub(crate) struct PendingKey {
     pub remap: RemapAction,
     pub hold_sent: bool,
+    pub time_pressed: Instant,
 }
