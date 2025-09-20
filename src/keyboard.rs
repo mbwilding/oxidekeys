@@ -3,7 +3,7 @@ use crate::structs::{Config, PendingKey, RemapAction};
 use anyhow::{Result, anyhow, bail};
 use evdev::Device as EvDevDevice;
 use evdev::{EventType, KeyCode};
-use log::{debug, info};
+use log::{debug, info, trace};
 use std::collections::{HashMap, HashSet};
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
@@ -320,7 +320,10 @@ fn handle_key_up(
                     press(virt_keyboard, tap, config.no_emit)?;
                     release(virt_keyboard, tap, config.no_emit)?;
                 }
-                _ => {}
+                _ => {
+                    trace!("SHOULD NEVER HIT: {:#?}", key);
+                    release(virt_keyboard, key, config.no_emit)?;
+                }
             }
         }
     } else {
