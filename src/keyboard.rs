@@ -264,9 +264,9 @@ fn release_keys(device: &mut UInputDevice, keys: &[KeyCode], no_emit: bool) -> R
     Ok(())
 }
 
-fn add_pending(pending: &mut HashMap<KeyCode, PendingKey>, key: KeyCode, remap: RemapAction) {
+fn add_pending(pending: &mut HashMap<KeyCode, PendingKey>, key: KeyCode, remap: &RemapAction) {
     pending.entry(key).or_insert(PendingKey {
-        remap,
+        remap: remap.clone(),
         hold_sent: false,
         time_pressed: Instant::now(),
     });
@@ -313,7 +313,12 @@ fn handle_key_down(
     send_holds_for_all_pending_keys(virt_keyboard, config, pending)?;
 
     if let Some(remap) = remaps.get(&key) {
-        add_pending(pending, key, remap.clone());
+        if let Some(ref keys) = remap.tap {
+            if remap.hold.is_none() {
+                press_keys(virt_keyboard, keys, config.no_emit)?;
+            }
+        }
+        add_pending(pending, key, remap);
     } else {
         press_key(virt_keyboard, &key, config.no_emit)?;
     }
