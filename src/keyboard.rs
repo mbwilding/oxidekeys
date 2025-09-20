@@ -152,10 +152,11 @@ pub(crate) fn send_holds_for_all_pending_keys(
 ) -> Result<()> {
     for pending_key in pending.values_mut() {
         if let Some(hold_code) = pending_key.remap.hold
-            && !pending_key.hold_sent {
-                press(virt_keyboard, hold_code, config.no_emit)?;
-                pending_key.hold_sent = true;
-            }
+            && !pending_key.hold_sent
+        {
+            press(virt_keyboard, hold_code, config.no_emit)?;
+            pending_key.hold_sent = true;
+        }
     }
     Ok(())
 }
