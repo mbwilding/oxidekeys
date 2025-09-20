@@ -7,7 +7,7 @@ fn default_no_emit() -> bool {
 }
 
 fn default_hrm_term() -> u16 {
-    130
+    144
 }
 
 fn default_keyboards() -> HashMap<String, HashMap<KeyCode, RemapAction>> {
@@ -164,14 +164,8 @@ fn default_layers() -> HashMap<String, HashMap<KeyCode, HashMap<KeyCode, Vec<Key
                         vec![KeyCode::KEY_RIGHTSHIFT, KeyCode::KEY_E],
                     ),
                     // /\
-                    (
-                        KeyCode::KEY_G,
-                        vec![KeyCode::KEY_LEFTBRACE],
-                    ),
-                    (
-                        KeyCode::KEY_H,
-                        vec![KeyCode::KEY_BACKSLASH],
-                    ),
+                    (KeyCode::KEY_G, vec![KeyCode::KEY_LEFTBRACE]),
+                    (KeyCode::KEY_H, vec![KeyCode::KEY_BACKSLASH]),
                 ]),
             )]),
         ),

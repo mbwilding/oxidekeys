@@ -7,7 +7,9 @@ use crate::structs::*;
 use anyhow::Result;
 use log::debug;
 use log::info;
+use std::env;
 use std::fs;
+use std::path::PathBuf;
 use std::sync::Arc;
 use std::sync::Mutex;
 use std::thread;
@@ -15,12 +17,15 @@ use std::thread;
 fn main() -> Result<()> {
     env_logger::init();
 
-    let config_path = dirs::config_dir()
-        .unwrap_or_else(|| std::path::PathBuf::from("~/.config"))
-        .join("oxidekeys")
-        .join("config.yml");
+    let config_path = match env::args().nth(1) {
+        Some(arg_path) => PathBuf::from(arg_path),
+        None => dirs::config_dir()
+            .unwrap_or_else(|| std::path::PathBuf::from("~/.config"))
+            .join("oxidekeys")
+            .join("config.yml"),
+    };
 
-    let config: Config;
+    let config;
     if !config_path.exists() {
         config = Config::default();
         fs::create_dir_all(config_path.parent().unwrap())?;
