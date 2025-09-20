@@ -95,24 +95,14 @@ fn process(mut device: EvDevDevice, mut virt_keyboard: UInputDevice, config: Con
             if ev.event_type() != EventType::KEY {
                 continue;
             }
+
             let state = ev.value();
-            let code = ev.code();
-            let key = KeyCode(code);
+            let key = KeyCode(ev.code());
 
             if state == PRESS {
-                handle_press(
-                    &mut virt_keyboard,
-                    &config,
-                    &mut pending,
-                    key,
-                )?;
+                handle_press(&mut virt_keyboard, &config, &mut pending, key)?;
             } else if state == RELEASE {
-                handle_release(
-                    &mut virt_keyboard,
-                    &config,
-                    &mut pending,
-                    key,
-                )?;
+                handle_release(&mut virt_keyboard, &config, &mut pending, key)?;
             }
         }
     }
@@ -150,10 +140,7 @@ fn send_holds_for_pending_keys(
 ) -> Result<()> {
     for (_pending_keycode, pending_key) in pending.iter_mut() {
         let remap = pending_key.remap;
-        if remap.hold.is_some()
-            && !pending_key.hold_sent
-            && remap.hold.is_some()
-        {
+        if remap.hold.is_some() && !pending_key.hold_sent && remap.hold.is_some() {
             if let Some(hold_code) = remap.hold {
                 press(virt_keyboard, hold_code, config.no_emit)?;
                 pending_key.hold_sent = true;
