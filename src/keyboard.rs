@@ -70,7 +70,7 @@ pub(crate) fn open_keyboard_devices(
 pub(crate) fn create_virtual_keyboard() -> Result<UInputDevice> {
     let device = uinput::default()
         .map_err(|e| anyhow!("Failed to open /dev/uinput (sudo modprobe uinput): {e}"))?
-        .name("Keyflect Virtual Keyboard")?
+        .name("OxideKeys Virtual Keyboard")?
         .event(uinput::event::Keyboard::All)?
         .create()?;
 

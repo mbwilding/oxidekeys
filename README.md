@@ -1,50 +1,18 @@
-# Keyflect
+# OxideKeys
 
-Default config location: `~/.config/keyflect/config.yml`
+## Overview
 
-```yml
-no_emit: false
-hrm_term: 130
-keyboards:
-  AT Translated Set 2 keyboard:
-    KEY_CAPSLOCK:
-      tap: KEY_BACKSPACE
-    KEY_S:
-      tap: KEY_S
-      hold: KEY_LEFTMETA
-      hrm: true
-    KEY_K:
-      tap: KEY_K
-      hold: KEY_RIGHTALT
-      hrm: true
-    KEY_SPACE:
-      tap: KEY_SPACE
-      hold: KEY_LEFTSHIFT
-    KEY_LEFTSHIFT:
-      tap: KEY_ESC
-    KEY_SEMICOLON:
-      tap: KEY_SEMICOLON
-      hold: KEY_RIGHTCTRL
-      hrm: true
-    KEY_L:
-      tap: KEY_L
-      hold: KEY_RIGHTMETA
-      hrm: true
-    KEY_D:
-      tap: KEY_D
-      hold: KEY_LEFTALT
-      hrm: true
-    KEY_A:
-      tap: KEY_A
-      hold: KEY_LEFTCTRL
-      hrm: true
-layers:
-  Navigation:
-    KEY_RIGHTALT:
-      KEY_V: KEY_UP
-      KEY_C: KEY_DOWN
-      KEY_P: KEY_RIGHT
-      KEY_J: KEY_LEFT
-```
+A utility to give you agency over your keyboards.
+Event based, without polling.
+Utilizes `uinput` for virtualizing the keyboard.
+
+- **Remapping**: Remap keys
+- **Dual function keys**: tap, hold remapping on a single key, overlap causes hold without delay times
+- **Layers**: Hold a key and remap to anything
+- **Home-Row Mods**: Allows setting home-row keys to be modifier keys on hold
+
+## Config
+
+Default config location: `~/.config/oxidekey/config.yml`
 
 You can also change the `hrm_term` per key, if not specified, it uses the global `hrm_term`.
