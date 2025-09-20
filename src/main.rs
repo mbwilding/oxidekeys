@@ -17,7 +17,7 @@ fn main() -> Result<()> {
 
     let config_path = dirs::config_dir()
         .unwrap_or_else(|| std::path::PathBuf::from("~/.config"))
-        .join("interception-rust")
+        .join("keyflect")
         .join("config.yml");
 
     let config: Config;

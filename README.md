@@ -1,6 +1,6 @@
 # Keyflect
 
-Default config location: `~/.config/interception-rust/config.yml`
+Default config location: `~/.config/keyflect/config.yml`
 
 ```yml
 no_emit: false
