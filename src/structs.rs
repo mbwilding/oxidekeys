@@ -6,6 +6,7 @@ fn default_keyboards() -> HashMap<String, HashMap<KeyCode, RemapAction>> {
     HashMap::from([(
         "AT Translated Set 2 keyboard".to_string(),
         [
+            #[allow(clippy::needless_update)]
             (
                 KeyCode::KEY_SPACE,
                 RemapAction {
@@ -14,19 +15,11 @@ fn default_keyboards() -> HashMap<String, HashMap<KeyCode, RemapAction>> {
                     ..Default::default()
                 },
             ),
+            #[allow(clippy::needless_update)]
             (
                 KeyCode::KEY_LEFTSHIFT,
                 RemapAction {
                     tap: Some(KeyCode::KEY_ESC),
-                    hold: Some(KeyCode::KEY_LEFTMETA),
-                    ..Default::default()
-                },
-            ),
-            (
-                KeyCode::KEY_CAPSLOCK,
-                RemapAction {
-                    tap: Some(KeyCode::KEY_BACKSPACE),
-                    hold: Some(KeyCode::KEY_LEFTCTRL),
                     ..Default::default()
                 },
             ),
@@ -38,6 +31,70 @@ fn default_keyboards() -> HashMap<String, HashMap<KeyCode, RemapAction>> {
                     hold: Some(KeyCode::KEY_LEFTCTRL),
                     hrm: Some(true),
                     hrm_term: Some(144),
+                    ..Default::default()
+                },
+            ),
+            #[allow(clippy::needless_update)]
+            (
+                KeyCode::KEY_SEMICOLON,
+                RemapAction {
+                    tap: Some(KeyCode::KEY_SEMICOLON),
+                    hold: Some(KeyCode::KEY_RIGHTCTRL),
+                    hrm: Some(true),
+                    hrm_term: Some(144),
+                    ..Default::default()
+                },
+            ),
+            #[allow(clippy::needless_update)]
+            (
+                KeyCode::KEY_S,
+                RemapAction {
+                    tap: Some(KeyCode::KEY_S),
+                    hold: Some(KeyCode::KEY_LEFTMETA),
+                    hrm: Some(true),
+                    hrm_term: Some(144),
+                    ..Default::default()
+                },
+            ),
+            #[allow(clippy::needless_update)]
+            (
+                KeyCode::KEY_L,
+                RemapAction {
+                    tap: Some(KeyCode::KEY_L),
+                    hold: Some(KeyCode::KEY_RIGHTMETA),
+                    hrm: Some(true),
+                    hrm_term: Some(144),
+                    ..Default::default()
+                },
+            ),
+            #[allow(clippy::needless_update)]
+            (
+                KeyCode::KEY_D,
+                RemapAction {
+                    tap: Some(KeyCode::KEY_D),
+                    hold: Some(KeyCode::KEY_LEFTALT),
+                    hrm: Some(true),
+                    hrm_term: Some(144),
+                    ..Default::default()
+                },
+            ),
+            #[allow(clippy::needless_update)]
+            (
+                KeyCode::KEY_K,
+                RemapAction {
+                    tap: Some(KeyCode::KEY_K),
+                    hold: Some(KeyCode::KEY_RIGHTALT),
+                    hrm: Some(true),
+                    hrm_term: Some(144),
+                    ..Default::default()
+                },
+            ),
+            #[allow(clippy::needless_update)]
+            (
+                KeyCode::KEY_CAPSLOCK,
+                RemapAction {
+                    tap: Some(KeyCode::KEY_BACKSPACE),
+                    hold: Some(KeyCode::KEY_LEFTCTRL),
                     ..Default::default()
                 },
             ),
