@@ -5,12 +5,16 @@ mod structs;
 use crate::keyboard::*;
 use crate::structs::*;
 use anyhow::Result;
+use log::debug;
+use log::info;
 use std::fs;
 use std::sync::Arc;
 use std::sync::Mutex;
 use std::thread;
 
 fn main() -> Result<()> {
+    env_logger::init();
+
     let config_path = dirs::config_dir()
         .unwrap_or_else(|| std::path::PathBuf::from("~/.config"))
         .join("interception-rust")
@@ -22,12 +26,12 @@ fn main() -> Result<()> {
         fs::create_dir_all(config_path.parent().unwrap())?;
         let config_yaml = serde_yaml::to_string(&config)?;
         fs::write(&config_path, config_yaml)?;
-        println!("Default config written to {}", config_path.display());
+        info!("Default config written to {}", config_path.display());
     } else {
         let config_content = fs::read_to_string(&config_path)?;
         config = serde_yaml::from_str(&config_content)?;
     }
-    println!("Config: {:#?}", config);
+    debug!("Config: {:#?}", config);
 
     let devices = open_keyboard_devices(&config)?;
     let virt_keyboard = Arc::new(Mutex::new(create_virtual_keyboard()?));

@@ -3,6 +3,7 @@ use crate::structs::{Config, PendingKey, RemapAction};
 use anyhow::{Result, anyhow, bail};
 use evdev::Device as EvDevDevice;
 use evdev::{EventType, KeyCode};
+use log::{debug, info};
 use std::sync::{Arc, Mutex};
 use std::{collections::HashMap, time::Instant};
 use udev::Enumerator;
@@ -11,7 +12,7 @@ use uinput::device::Device as UInputDevice;
 pub(crate) fn open_keyboard_devices(
     config: &Config,
 ) -> Result<Vec<(EvDevDevice, HashMap<KeyCode, RemapAction>)>> {
-    println!("Detecting keyboards");
+    debug!("Detecting keyboards");
 
     let mut enumerator = Enumerator::new()?;
     enumerator.match_subsystem("input")?;
@@ -32,7 +33,7 @@ pub(crate) fn open_keyboard_devices(
             };
 
             if name_matches {
-                println!("Keyboard Monitored: {:?}", dev.name());
+                info!("Keyboard Monitored: {:?}", dev.name());
 
                 if !config.no_emit {
                     dev.grab()?;
@@ -53,7 +54,7 @@ pub(crate) fn open_keyboard_devices(
 
                 devices.push((dev, keyboard_value));
             } else {
-                println!("Keyboard Ignored: {:?}", dev.name());
+                debug!("Keyboard Ignored: {:?}", dev.name());
             }
         }
     }
@@ -111,7 +112,7 @@ pub(crate) fn press(device: &mut UInputDevice, code: KeyCode, no_emit: bool) -> 
     }
     device.write(EV_KEY, code.0 as i32, PRESS)?;
     device.synchronize()?;
-    println!("PRESS: {:?}", code);
+    debug!("PRESS: {:?}", code);
     Ok(())
 }
 
@@ -121,7 +122,7 @@ pub(crate) fn release(device: &mut UInputDevice, code: KeyCode, no_emit: bool) -
     }
     device.write(EV_KEY, code.0 as i32, RELEASE)?;
     device.synchronize()?;
-    println!("RELEASE: {:?}", code);
+    debug!("RELEASE: {:?}", code);
     Ok(())
 }
 
@@ -194,7 +195,7 @@ pub(crate) fn handle_key_release(
                 // Hold event had been sent, release the hold
                 release(virt_keyboard, hold_code, config.no_emit)?;
             }
-            (Some(hold_code), false) => {
+            (Some(_), false) => {
                 // Treat as tap
                 press(virt_keyboard, pending_key.remap.tap, config.no_emit)?;
                 release(virt_keyboard, pending_key.remap.tap, config.no_emit)?;
