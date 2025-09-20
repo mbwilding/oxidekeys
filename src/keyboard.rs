@@ -313,10 +313,10 @@ fn handle_key_down(
     send_holds_for_all_pending_keys(virt_keyboard, config, pending)?;
 
     if let Some(remap) = remaps.get(&key) {
-        if let Some(ref keys) = remap.tap {
-            if remap.hold.is_none() {
-                press_keys(virt_keyboard, keys, config.no_emit)?;
-            }
+        if let Some(ref keys) = remap.tap
+            && remap.hold.is_none()
+        {
+            press_keys(virt_keyboard, keys, config.no_emit)?;
         }
         add_pending(pending, key, remap);
     } else {
