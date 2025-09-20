@@ -188,24 +188,15 @@ pub(crate) fn handle_key_up(
             pending_key.remap.hold,
             pending_key.hold_sent,
         ) {
-            // No HRM
-            (Some(false), _, Some(hold), true) => {
-                // Release hold remapped
-                release(virt_keyboard, hold, config.no_emit)?;
-            }
-            (Some(false), Some(tap), _, _) => {
-                // Tap remapped
-                press(virt_keyboard, tap, config.no_emit)?;
-                release(virt_keyboard, tap, config.no_emit)?;
-            }
-
-            // HRM (TODO: Adjust logic, use from pending_key time_pressed and
+            // HRM (TODO: add logic for HRM branches, use from pending_key time_pressed and
             // pending_key.remap.hmr_term which is an Option<Instant>)
-            (Some(true), _, Some(hold), true) => {
+
+            // No HRM
+            (_, _, Some(hold), true) => {
                 // Release hold remapped
                 release(virt_keyboard, hold, config.no_emit)?;
             }
-            (Some(true), Some(tap), _, _) => {
+            (_, Some(tap), _, _) => {
                 // Tap remapped
                 press(virt_keyboard, tap, config.no_emit)?;
                 release(virt_keyboard, tap, config.no_emit)?;
