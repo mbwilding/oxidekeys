@@ -7,37 +7,51 @@ use anyhow::{Result, anyhow, bail};
 use evdev::Device as EvDevDevice;
 use evdev::{EventType, KeyCode};
 use std::collections::HashMap;
+use std::sync::Arc;
+use std::sync::Mutex;
 use udev::Enumerator;
 use uinput::device::Device as UInputDevice;
 
-fn open_keyboard_devices(filter: &[String], no_emit: bool) -> Result<EvDevDevice> {
+fn open_keyboard_devices(config: &Config) -> Result<Vec<(EvDevDevice, HashMap<KeyCode, RemapAction>)>> {
     println!("Detecting keyboards");
 
     let mut enumerator = Enumerator::new()?;
     enumerator.match_subsystem("input")?;
     enumerator.match_property("ID_INPUT_KEYBOARD", "1")?;
 
+    let mut devices = Vec::new();
+
     for device in enumerator.scan_devices()? {
         if let Some(devnode) = device.devnode()
             && let Ok(mut dev) = EvDevDevice::open(devnode)
         {
             let name_matches = match dev.name() {
-                Some(name_value) => filter.iter().any(|item| name_value == item),
+                Some(name_value) => config.keyboards.iter().any(|keyboard| name_value == keyboard.0),
                 None => false,
             };
+
             if name_matches {
                 println!("Keyboard Monitored: {:?}", dev.name());
-                if !no_emit {
+                if !config.no_emit {
                     dev.grab()?;
                 }
-                return Ok(dev);
+                // Find the associated keyboard value
+                let keyboard_value = dev.name().and_then(|name_value| {
+                    config.keyboards.iter()
+                        .find_map(|(k, v)| if name_value == k { Some(v.clone()) } else { None })
+                }).unwrap_or_default();
+                devices.push((dev, keyboard_value));
             } else {
                 println!("Keyboard Ignored: {:?}", dev.name());
             }
         }
     }
 
-    bail!("No keyboard found");
+    if devices.is_empty() {
+        bail!("No keyboards found");
+    } else {
+        Ok(devices)
+    }
 }
 
 fn create_virtual_keyboard() -> Result<UInputDevice> {
@@ -75,22 +89,22 @@ fn main() -> Result<()> {
     let config: Config = serde_yaml::from_str(&config_content)?;
     println!("Config: {:#?}", config);
 
-    let devices = open_keyboard_devices(
-        &["AT Translated Set 2 keyboard".to_string()],
-        config.no_emit,
-    )?;
-    let virt_keyboard = create_virtual_keyboard()?;
+    let devices = open_keyboard_devices(&config)?;
+    let virt_keyboard = Arc::new(Mutex::new(create_virtual_keyboard()?));
 
-    process(devices, virt_keyboard, config)?;
+    for device in devices {
+        process(device.0, virt_keyboard.clone(), &device.1, &config)?;
+    }
 
     Ok(())
 }
 
-fn process(mut device: EvDevDevice, mut virt_keyboard: UInputDevice, config: Config) -> Result<()> {
+fn process(mut device: EvDevDevice, virt_keyboard: Arc<Mutex<UInputDevice>>, keyboard: &HashMap<KeyCode, RemapAction>, config: &Config) -> Result<()> {
     let mut pending: HashMap<KeyCode, PendingKey> = HashMap::new();
 
     loop {
         let events = device.fetch_events()?;
+        let mut virt_keyboard = virt_keyboard.lock().unwrap();
         for ev in events {
             if ev.event_type() != EventType::KEY {
                 continue;
@@ -100,9 +114,9 @@ fn process(mut device: EvDevDevice, mut virt_keyboard: UInputDevice, config: Con
             let key = KeyCode(ev.code());
 
             if state == PRESS {
-                handle_press(&mut virt_keyboard, &config, &mut pending, key)?;
+                handle_press(&mut virt_keyboard, &config, keyboard, &mut pending, key)?;
             } else if state == RELEASE {
-                handle_release(&mut virt_keyboard, &config, &mut pending, key)?;
+                handle_release(&mut virt_keyboard, &config, keyboard, &mut pending, key)?;
             }
         }
     }
@@ -111,10 +125,11 @@ fn process(mut device: EvDevDevice, mut virt_keyboard: UInputDevice, config: Con
 fn handle_press(
     virt_keyboard: &mut UInputDevice,
     config: &Config,
+    keyboard: &HashMap<KeyCode, RemapAction>,
     pending: &mut HashMap<KeyCode, PendingKey>,
     key: KeyCode,
 ) -> Result<()> {
-    if let Some(&remap) = config.remaps.get(&key) {
+    if let Some(&remap) = keyboard.get(&key) {
         if remap.hold.is_some() {
             pending.insert(
                 key,
@@ -140,11 +155,14 @@ fn send_holds_for_pending_keys(
 ) -> Result<()> {
     for (_pending_keycode, pending_key) in pending.iter_mut() {
         let remap = pending_key.remap;
-        if remap.hold.is_some() && !pending_key.hold_sent && remap.hold.is_some()
-            && let Some(hold_code) = remap.hold {
-                press(virt_keyboard, hold_code, config.no_emit)?;
-                pending_key.hold_sent = true;
-            }
+        if remap.hold.is_some()
+            && !pending_key.hold_sent
+            && remap.hold.is_some()
+            && let Some(hold_code) = remap.hold
+        {
+            press(virt_keyboard, hold_code, config.no_emit)?;
+            pending_key.hold_sent = true;
+        }
     }
     Ok(())
 }
@@ -152,6 +170,7 @@ fn send_holds_for_pending_keys(
 fn handle_release(
     virt_keyboard: &mut UInputDevice,
     config: &Config,
+    keyboard: &HashMap<KeyCode, RemapAction>,
     pending: &mut HashMap<KeyCode, PendingKey>,
     key: KeyCode,
 ) -> Result<()> {
@@ -171,7 +190,7 @@ fn handle_release(
             press(virt_keyboard, hold_code, config.no_emit)?;
             release(virt_keyboard, hold_code, config.no_emit)?;
         }
-    } else if let Some(&remap) = config.remaps.get(&key) {
+    } else if let Some(&remap) = keyboard.get(&key) {
         release(virt_keyboard, remap.tap, config.no_emit)?;
     } else {
         release(virt_keyboard, key, config.no_emit)?;
