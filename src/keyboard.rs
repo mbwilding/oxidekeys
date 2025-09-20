@@ -129,7 +129,7 @@ pub(crate) fn process(
                 continue;
             }
 
-            let remapped_key = resolve_layered_key(key, &active_layers, config);
+            let remapped_keys = resolve_layered_keys(key, &active_layers, config);
 
             match state {
                 PRESS => {
@@ -166,17 +166,21 @@ pub(crate) fn process(
                     }
 
                     keys_down.insert(key);
-                    handle_key_down(
-                        &mut virt_keyboard,
-                        config,
-                        &mut pending,
-                        remapped_key,
-                        remaps,
-                    )?;
+                    for remapped_key in remapped_keys {
+                        handle_key_down(
+                            &mut virt_keyboard,
+                            config,
+                            &mut pending,
+                            remapped_key,
+                            remaps,
+                        )?;
+                    }
                 }
                 RELEASE => {
                     keys_down.remove(&key);
-                    handle_key_up(&mut virt_keyboard, config, &mut pending, remapped_key)?;
+                    for remapped_key in remapped_keys {
+                        handle_key_up(&mut virt_keyboard, config, &mut pending, remapped_key)?;
+                    }
                 }
                 _ => {}
             }
@@ -199,17 +203,22 @@ fn is_modifier(key: KeyCode) -> bool {
     )
 }
 
-fn resolve_layered_key(key: KeyCode, active_layers: &HashSet<String>, config: &Config) -> KeyCode {
+fn resolve_layered_keys(
+    key: KeyCode,
+    active_layers: &HashSet<String>,
+    config: &Config,
+) -> Vec<KeyCode> {
     for layer in active_layers {
         if let Some(layer_map) = config.layers.get(layer) {
             for mapping in layer_map.values() {
-                if let Some(&remapped) = mapping.get(&key) {
-                    return remapped;
+                if let Some(remapped) = mapping.get(&key) {
+                    return remapped.clone();
                 }
             }
         }
     }
-    key
+
+    vec![key]
 }
 
 fn press(device: &mut UInputDevice, code: KeyCode, no_emit: bool) -> Result<()> {
