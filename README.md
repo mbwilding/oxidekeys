@@ -3,8 +3,7 @@
 ## Overview
 
 A utility to give you agency over your keyboards.
-Event based, without polling.
-Utilizes `uinput` for virtualizing the keyboard.
+Utilizes `uinput` for virtualizing the keyboards.
 
 - **Remapping**: Remap keys
 - **Dual function keys**: tap, hold remapping on a single key, overlap causes hold without delay times

@@ -10,8 +10,6 @@ use log::info;
 use std::env;
 use std::fs;
 use std::path::PathBuf;
-use std::sync::Arc;
-use std::sync::Mutex;
 use std::thread;
 
 fn main() -> Result<()> {
@@ -39,11 +37,10 @@ fn main() -> Result<()> {
     debug!("Config: {:#?}", config);
 
     let devices = open_keyboard_devices(&config)?;
-    let virt_keyboard = Arc::new(Mutex::new(create_virtual_keyboard()?));
 
     let mut handles = Vec::new();
     for device in devices {
-        let virt_keyboard = virt_keyboard.clone();
+        let virt_keyboard = create_virtual_keyboard(device.0.name().unwrap())?;
         let ev_dev_device = device.0;
         let remaps = device.1.clone();
         let config = config.clone();

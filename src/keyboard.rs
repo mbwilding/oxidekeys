@@ -5,7 +5,7 @@ use evdev::Device as EvDevDevice;
 use evdev::{EventType, KeyCode};
 use log::{debug, info};
 use std::collections::{HashMap, HashSet};
-use std::sync::{Arc, Mutex};
+use std::io::ErrorKind;
 use std::time::Duration;
 use std::time::Instant;
 use udev::Enumerator;
@@ -35,6 +35,8 @@ pub(crate) fn open_keyboard_devices(
             };
             if name_matches {
                 info!("Keyboard Monitored: {:?}", dev.name());
+
+                dev.set_nonblocking(true)?;
 
                 if !config.no_emit {
                     dev.grab()?;
@@ -67,10 +69,10 @@ pub(crate) fn open_keyboard_devices(
     }
 }
 
-pub(crate) fn create_virtual_keyboard() -> Result<UInputDevice> {
+pub(crate) fn create_virtual_keyboard(name: &str) -> Result<UInputDevice> {
     let device = uinput::default()
         .map_err(|e| anyhow!("Failed to open /dev/uinput (sudo modprobe uinput): {e}"))?
-        .name("OxideKeys Virtual Keyboard")?
+        .name(format!("{} OxideKeys", name))?
         .event(uinput::event::Keyboard::All)?
         .create()?;
 
@@ -79,7 +81,7 @@ pub(crate) fn create_virtual_keyboard() -> Result<UInputDevice> {
 
 pub(crate) fn process(
     mut device: EvDevDevice,
-    virt_keyboard: Arc<Mutex<UInputDevice>>,
+    mut virt_keyboard: UInputDevice,
     remaps: &HashMap<KeyCode, RemapAction>,
     config: &Config,
 ) -> Result<()> {
@@ -89,8 +91,16 @@ pub(crate) fn process(
     let mut flush_keys = Vec::new();
 
     loop {
-        let events = device.fetch_events()?;
-        let mut virt_keyboard = virt_keyboard.lock().unwrap();
+        let events = match device.fetch_events() {
+            Ok(ev) => ev,
+            Err(err) if err.kind() == ErrorKind::WouldBlock => {
+                send_holds_for_all_pending_keys(&mut virt_keyboard, config, &mut pending, &keys_down)?;
+                std::thread::sleep(Duration::from_millis(1));
+                continue;
+            }
+            Err(err) => return Err(err.into()),
+        };
+
         for ev in events {
             if ev.event_type() != EventType::KEY {
                 continue;
@@ -280,9 +290,11 @@ fn send_holds_for_all_pending_keys(
     virt_keyboard: &mut UInputDevice,
     config: &Config,
     pending: &mut HashMap<KeyCode, PendingKey>,
+    keys_down: &HashSet<KeyCode>,
 ) -> Result<()> {
-    for pending_key in pending.values_mut() {
+    for (pending_keycode, pending_key) in pending.iter_mut() {
         let remap = &pending_key.remap;
+
         if remap.hrm == Some(true) {
             let hrm_term = remap.hrm_term.unwrap_or(config.hrm_term);
             let elapsed = pending_key.time_pressed.elapsed();
@@ -296,8 +308,21 @@ fn send_holds_for_all_pending_keys(
         } else if let Some(hold) = &remap.hold
             && !pending_key.hold_sent
         {
-            press_keys(virt_keyboard, hold, config.no_emit)?;
-            pending_key.hold_sent = true;
+            let is_overlay = remap.tap.is_some() && remap.hold.is_some();
+            // For overlays: only trigger "hold" if another non-modifier key is being held.
+            if is_overlay {
+                let other_non_modifiers = keys_down.iter()
+                    .filter(|&&k| k != *pending_keycode && !is_modifier(k))
+                    .count();
+                if other_non_modifiers > 0 {
+                    press_keys(virt_keyboard, hold, config.no_emit)?;
+                    pending_key.hold_sent = true;
+                }
+            } else {
+                // If not an overlay, send hold immediately.
+                press_keys(virt_keyboard, hold, config.no_emit)?;
+                pending_key.hold_sent = true;
+            }
         }
     }
     Ok(())
@@ -310,8 +335,6 @@ fn handle_key_down(
     key: KeyCode,
     remaps: &HashMap<KeyCode, RemapAction>,
 ) -> Result<()> {
-    send_holds_for_all_pending_keys(virt_keyboard, config, pending)?;
-
     if let Some(remap) = remaps.get(&key) {
         if let Some(ref keys) = remap.tap
             && remap.hold.is_none()
