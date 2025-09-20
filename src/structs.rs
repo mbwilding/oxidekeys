@@ -2,6 +2,10 @@ use evdev::KeyCode;
 use serde::{Deserialize, Serialize};
 use std::{collections::HashMap, time::Instant};
 
+fn default_no_emit() -> bool {
+    false
+}
+
 fn default_keyboards() -> HashMap<String, HashMap<KeyCode, RemapAction>> {
     HashMap::from([(
         "AT Translated Set 2 keyboard".to_string(),
@@ -104,16 +108,31 @@ fn default_keyboards() -> HashMap<String, HashMap<KeyCode, RemapAction>> {
     )])
 }
 
-fn default_no_emit() -> bool {
-    false
+fn default_layers() -> HashMap<String, HashMap<KeyCode, HashMap<KeyCode, KeyCode>>> {
+    HashMap::from([(
+        "Navigation".to_string(),
+        HashMap::from([(
+            KeyCode::KEY_RIGHTALT,
+            HashMap::from([
+                (KeyCode::KEY_H, KeyCode::KEY_LEFT),
+                (KeyCode::KEY_J, KeyCode::KEY_DOWN),
+                (KeyCode::KEY_K, KeyCode::KEY_UP),
+                (KeyCode::KEY_L, KeyCode::KEY_RIGHT),
+            ]),
+        )]),
+    )])
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub(crate) struct Config {
-    #[serde(default = "default_keyboards")]
-    pub keyboards: HashMap<String, HashMap<KeyCode, RemapAction>>,
     #[serde(default = "default_no_emit")]
     pub no_emit: bool,
+
+    #[serde(default = "default_keyboards")]
+    pub keyboards: HashMap<String, HashMap<KeyCode, RemapAction>>,
+
+    #[serde(default = "default_layers")]
+    pub layers: HashMap<String, HashMap<KeyCode, HashMap<KeyCode, KeyCode>>>,
 }
 
 impl Default for Config {
@@ -121,6 +140,7 @@ impl Default for Config {
         Self {
             keyboards: default_keyboards(),
             no_emit: default_no_emit(),
+            layers: default_layers(),
         }
     }
 }
@@ -130,12 +150,15 @@ pub(crate) struct RemapAction {
     /// Tap key
     #[serde(skip_serializing_if = "Option::is_none")]
     pub tap: Option<KeyCode>,
+
     /// Hold key
     #[serde(skip_serializing_if = "Option::is_none")]
     pub hold: Option<KeyCode>,
+
     /// Homerow Mod
     #[serde(skip_serializing_if = "Option::is_none")]
     pub hrm: Option<bool>,
+
     /// Homerow Mod Term
     #[serde(skip_serializing_if = "Option::is_none")]
     pub hrm_term: Option<u16>,
