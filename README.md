@@ -8,7 +8,7 @@ Utilizes `uinput` for virtualizing the keyboards.
 - **Remapping**: Remap keys
 - **Dual function keys**: tap, hold remapping on a single key, overlap causes hold without delay times
 - **Layers**: Hold a key and remap to anything
-- **Home-Row Mods**: Allows setting home-row keys to be modifier keys on hold
+- **Home-Row Mods**: Allows setting home-row keys to be modifier keys on hold, time based
 
 ## Install
 

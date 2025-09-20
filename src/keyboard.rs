@@ -151,9 +151,9 @@ pub(crate) fn process(
 
                     for (pending_keycode, pending_key) in pending.iter_mut() {
                         let remap = &pending_key.remap;
-                        let is_overlay =
+                        let is_dual_function_key =
                             remap.hrm != Some(true) && remap.tap.is_some() && remap.hold.is_some();
-                        if is_overlay
+                        if is_dual_function_key
                             && !pending_key.hold_sent
                             && key != *pending_keycode
                             && !is_modifier(key)
@@ -328,8 +328,8 @@ fn send_holds_for_all_pending_keys(
         } else if let Some(hold) = &remap.hold
             && !pending_key.hold_sent
         {
-            let is_overlay = remap.tap.is_some() && remap.hold.is_some();
-            if is_overlay {
+            let is_dual_function_key = remap.tap.is_some() && remap.hold.is_some();
+            if is_dual_function_key {
                 let other_non_modifiers = keys_down
                     .iter()
                     .filter(|&&k| k != *pending_keycode && !is_modifier(k))
