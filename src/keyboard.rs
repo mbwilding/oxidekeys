@@ -145,7 +145,7 @@ pub(crate) fn process(
                             let elapsed = pending_key.time_pressed.elapsed();
                             if elapsed >= Duration::from_millis(hrm_term as u64) {
                                 if let Some(hold) = &remap.hold {
-                                        press_keys(&mut virt_keyboard, hold, config.no_emit)?;
+                                    press_keys(&mut virt_keyboard, hold, config.no_emit)?;
                                     pending_key.hold_sent = true;
                                 }
                             } else {
