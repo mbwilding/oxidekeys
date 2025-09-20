@@ -33,7 +33,6 @@ pub(crate) fn open_keyboard_devices(
                     .any(|keyboard| name_value == keyboard.0),
                 None => false,
             };
-
             if name_matches {
                 info!("Keyboard Monitored: {:?}", dev.name());
 
@@ -146,9 +145,7 @@ pub(crate) fn process(
                             let elapsed = pending_key.time_pressed.elapsed();
                             if elapsed >= Duration::from_millis(hrm_term as u64) {
                                 if let Some(hold) = &remap.hold {
-                                    for key in hold {
-                                        press(&mut virt_keyboard, *key, config.no_emit)?;
-                                    }
+                                        press_keys(&mut virt_keyboard, hold, config.no_emit)?;
                                     pending_key.hold_sent = true;
                                 }
                             } else {
@@ -161,10 +158,8 @@ pub(crate) fn process(
                         if let Some(pending_key) = remove_pending(&mut pending, flush_key) {
                             let remap = pending_key.remap;
                             if let Some(tap) = remap.tap {
-                                for key in tap {
-                                    press(&mut virt_keyboard, key, config.no_emit)?;
-                                    release(&mut virt_keyboard, key, config.no_emit)?;
-                                }
+                                press_keys(&mut virt_keyboard, &tap, config.no_emit)?;
+                                release_keys(&mut virt_keyboard, &tap, config.no_emit)?;
                             }
                         }
                     }
@@ -225,23 +220,47 @@ fn resolve_layered_keys(
     vec![key]
 }
 
-fn press(device: &mut UInputDevice, code: KeyCode, no_emit: bool) -> Result<()> {
+fn press_key(device: &mut UInputDevice, key: &KeyCode, no_emit: bool) -> Result<()> {
     if no_emit {
         return Ok(());
     }
-    device.write(EV_KEY, code.0 as i32, PRESS)?;
+    device.write(EV_KEY, key.0 as i32, PRESS)?;
     device.synchronize()?;
-    debug!("PRESS: {:?}", code);
+    debug!("PRESS: {:?}", key);
     Ok(())
 }
 
-fn release(device: &mut UInputDevice, code: KeyCode, no_emit: bool) -> Result<()> {
+fn press_keys(device: &mut UInputDevice, keys: &[KeyCode], no_emit: bool) -> Result<()> {
     if no_emit {
         return Ok(());
     }
-    device.write(EV_KEY, code.0 as i32, RELEASE)?;
+    for key in keys {
+        device.write(EV_KEY, key.0 as i32, PRESS)?;
+    }
     device.synchronize()?;
-    debug!("RELEASE: {:?}", code);
+    debug!("PRESS: {:?}", keys);
+    Ok(())
+}
+
+fn release_key(device: &mut UInputDevice, key: &KeyCode, no_emit: bool) -> Result<()> {
+    if no_emit {
+        return Ok(());
+    }
+    device.write(EV_KEY, key.0 as i32, RELEASE)?;
+    device.synchronize()?;
+    debug!("RELEASE: {:?}", key);
+    Ok(())
+}
+
+fn release_keys(device: &mut UInputDevice, keys: &[KeyCode], no_emit: bool) -> Result<()> {
+    if no_emit {
+        return Ok(());
+    }
+    for key in keys {
+        device.write(EV_KEY, key.0 as i32, RELEASE)?;
+    }
+    device.synchronize()?;
+    debug!("RELEASE: {:?}", keys);
     Ok(())
 }
 
@@ -271,17 +290,13 @@ fn send_holds_for_all_pending_keys(
                 && !pending_key.hold_sent
                 && elapsed >= Duration::from_millis(hrm_term as u64)
             {
-                for key in hold {
-                    press(virt_keyboard, *key, config.no_emit)?;
-                }
+                press_keys(virt_keyboard, hold, config.no_emit)?;
                 pending_key.hold_sent = true;
             }
         } else if let Some(hold) = &remap.hold
             && !pending_key.hold_sent
         {
-            for key in hold {
-                press(virt_keyboard, *key, config.no_emit)?;
-            }
+            press_keys(virt_keyboard, hold, config.no_emit)?;
             pending_key.hold_sent = true;
         }
     }
@@ -300,7 +315,7 @@ fn handle_key_down(
     if let Some(remap) = remaps.get(&key) {
         add_pending(pending, key, remap.clone());
     } else {
-        press(virt_keyboard, key, config.no_emit)?;
+        press_key(virt_keyboard, &key, config.no_emit)?;
     }
 
     Ok(())
@@ -322,37 +337,29 @@ fn handle_key_up(
 
             if elapsed < Duration::from_millis(hrm_term as u64) {
                 if let Some(tap) = remap.tap {
-                    for key in tap {
-                        press(virt_keyboard, key, config.no_emit)?;
-                        release(virt_keyboard, key, config.no_emit)?;
-                    }
+                    press_keys(virt_keyboard, &tap, config.no_emit)?;
+                    release_keys(virt_keyboard, &tap, config.no_emit)?;
                 }
             } else if remap.hold.is_some() && pending_key.hold_sent {
-                for key in remap.hold.unwrap() {
-                    release(virt_keyboard, key, config.no_emit)?;
-                }
+                release_keys(virt_keyboard, &remap.hold.unwrap(), config.no_emit)?;
             }
         } else {
             match (remap.tap, remap.hold, pending_key.hold_sent) {
                 (_, Some(hold), true) => {
-                    for key in hold {
-                        release(virt_keyboard, key, config.no_emit)?;
-                    }
+                    release_keys(virt_keyboard, &hold, config.no_emit)?;
                 }
                 (Some(tap), _, _) => {
-                    for key in tap {
-                        press(virt_keyboard, key, config.no_emit)?;
-                        release(virt_keyboard, key, config.no_emit)?;
-                    }
+                    press_keys(virt_keyboard, &tap, config.no_emit)?;
+                    release_keys(virt_keyboard, &tap, config.no_emit)?;
                 }
                 _ => {
-                    warn!("SHOULD NEVER HIT: {:#?}", key);
-                    release(virt_keyboard, key, config.no_emit)?;
+                    warn!("SHOULD NEVER HIT: {:#?}", &key);
+                    release_key(virt_keyboard, &key, config.no_emit)?;
                 }
             }
         }
     } else {
-        release(virt_keyboard, key, config.no_emit)?;
+        release_key(virt_keyboard, &key, config.no_emit)?;
     }
     Ok(())
 }
