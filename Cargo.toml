@@ -1,7 +1,13 @@
 [package]
 name = "oxidekeys"
+description = "A utility to give you agency over your keyboards"
 version = "0.1.0"
 edition = "2024"
+license = "MIT"
+readme = "README.md"
+
+[package.metadata]
+platform = ["linux"]
 
 [dependencies]
 anyhow = "1.0.100"
