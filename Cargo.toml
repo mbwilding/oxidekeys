@@ -8,7 +8,6 @@ anyhow = "1.0.100"
 evdev = { version = "0.13.2", features = ["serde"] }
 udev = "0.9.3"
 uinput = "0.1.3"
-nix = { version = "0.30.1", features = ["poll"] }
 serde = { version = "1.0.225", features = ["derive"] }
 serde_yaml = "0.9.33"
 
