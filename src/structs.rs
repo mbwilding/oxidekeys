@@ -11,6 +11,7 @@ fn default_keyboards() -> HashMap<String, HashMap<KeyCode, RemapAction>> {
                 RemapAction {
                     tap: KeyCode::KEY_SPACE,
                     hold: Some(KeyCode::KEY_LEFTSHIFT),
+                    hrm: None,
                 },
             ),
             (
@@ -18,6 +19,7 @@ fn default_keyboards() -> HashMap<String, HashMap<KeyCode, RemapAction>> {
                 RemapAction {
                     tap: KeyCode::KEY_ESC,
                     hold: Some(KeyCode::KEY_LEFTMETA),
+                    hrm: None,
                 },
             ),
             (
@@ -25,6 +27,7 @@ fn default_keyboards() -> HashMap<String, HashMap<KeyCode, RemapAction>> {
                 RemapAction {
                     tap: KeyCode::KEY_BACKSPACE,
                     hold: Some(KeyCode::KEY_LEFTCTRL),
+                    hrm: None,
                 },
             ),
         ]
@@ -59,7 +62,11 @@ pub(crate) struct RemapAction {
     /// Tap key
     pub tap: KeyCode,
     /// Hold key
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub hold: Option<KeyCode>,
+    /// Homerow Mod
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub hrm: Option<bool>,
 }
 
 impl Default for RemapAction {
@@ -67,6 +74,7 @@ impl Default for RemapAction {
         Self {
             tap: KeyCode::KEY_RESERVED,
             hold: None,
+            hrm: None,
         }
     }
 }
