@@ -37,10 +37,11 @@ fn open_keyboard_devices(
 
             if name_matches {
                 println!("Keyboard Monitored: {:?}", dev.name());
+
                 if !config.no_emit {
                     dev.grab()?;
                 }
-                // Find the associated keyboard value
+
                 let keyboard_value = dev
                     .name()
                     .and_then(|name_value| {
@@ -53,6 +54,7 @@ fn open_keyboard_devices(
                         })
                     })
                     .unwrap_or_default();
+
                 devices.push((dev, keyboard_value));
             } else {
                 println!("Keyboard Ignored: {:?}", dev.name());
@@ -69,7 +71,7 @@ fn open_keyboard_devices(
 
 fn create_virtual_keyboard() -> Result<UInputDevice> {
     let device = uinput::default()
-        .map_err(|e| anyhow!("Failed to open /dev/uinput: {e}"))?
+        .map_err(|e| anyhow!("Failed to open /dev/uinput (sudo modprobe uinput): {e}"))?
         .name("Interception Rust Virtual Keyboard")?
         .event(uinput::event::Keyboard::All)?
         .create()?;
