@@ -3,7 +3,7 @@ use crate::structs::{Config, PendingKey, RemapAction};
 use anyhow::{Result, anyhow, bail};
 use evdev::Device as EvDevDevice;
 use evdev::{EventType, KeyCode};
-use log::{debug, info};
+use log::{debug, info, trace};
 use std::sync::{Arc, Mutex};
 use std::{collections::HashMap, time::Instant};
 use udev::Enumerator;
@@ -98,7 +98,7 @@ pub(crate) fn process(
             match state {
                 PRESS => handle_key_press(&mut virt_keyboard, config, remaps, &mut pending, key)?,
                 RELEASE => {
-                    handle_key_release(&mut virt_keyboard, config, remaps, &mut pending, key)?
+                    handle_key_release(&mut virt_keyboard, config, &mut pending, key)?
                 }
                 _ => {}
             }
@@ -184,34 +184,23 @@ pub(crate) fn handle_key_press(
 pub(crate) fn handle_key_release(
     virt_keyboard: &mut UInputDevice,
     config: &Config,
-    remaps: &HashMap<KeyCode, RemapAction>,
     pending: &mut HashMap<KeyCode, PendingKey>,
     key: KeyCode,
 ) -> Result<()> {
-    // Remove from pending, if was pending
     if let Some(pending_key) = remove_pending(pending, &key) {
-        // The key was pending – had a mapping with a hold option
         match (pending_key.remap.hold, pending_key.hold_sent) {
             (Some(hold_code), true) => {
-                // Hold event had been sent, release the hold
+                // Release hold remapped
                 release(virt_keyboard, hold_code, config.no_emit)?;
             }
-            (Some(_), false) => {
-                // Treat as tap
-                press(virt_keyboard, pending_key.remap.tap, config.no_emit)?;
-                release(virt_keyboard, pending_key.remap.tap, config.no_emit)?;
-            }
-            (None, _) => {
-                // No hold, just tap logic (shouldn't happen for pending)
+            (_, _) => {
+                // Tap remapped
                 press(virt_keyboard, pending_key.remap.tap, config.no_emit)?;
                 release(virt_keyboard, pending_key.remap.tap, config.no_emit)?;
             }
         }
-    } else if let Some(&remap) = remaps.get(&key) {
-        // The key is mapped (but it wasn't recorded as pending)
-        release(virt_keyboard, remap.tap, config.no_emit)?;
     } else {
-        // The key does not match any mapping
+        // Release unmapped
         release(virt_keyboard, key, config.no_emit)?;
     }
     Ok(())
