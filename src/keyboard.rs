@@ -146,6 +146,17 @@ pub(crate) fn process(
 
                     for (pending_keycode, pending_key) in pending.iter_mut() {
                         let remap = &pending_key.remap;
+                        let is_overlay = remap.hrm != Some(true) && remap.tap.is_some() && remap.hold.is_some();
+                        if is_overlay && !pending_key.hold_sent && key != *pending_keycode && !is_modifier(key) {
+                            if let Some(hold) = &remap.hold {
+                                press_keys(&mut virt_keyboard, hold, config.no_emit)?;
+                                pending_key.hold_sent = true;
+                            }
+                        }
+                    }
+
+                    for (pending_keycode, pending_key) in pending.iter_mut() {
+                        let remap = &pending_key.remap;
                         if remap.hrm == Some(true)
                             && !pending_key.hold_sent
                             && !is_modifier(key)
@@ -309,7 +320,6 @@ fn send_holds_for_all_pending_keys(
             && !pending_key.hold_sent
         {
             let is_overlay = remap.tap.is_some() && remap.hold.is_some();
-            // For overlays: only trigger "hold" if another non-modifier key is being held.
             if is_overlay {
                 let other_non_modifiers = keys_down.iter()
                     .filter(|&&k| k != *pending_keycode && !is_modifier(k))
@@ -319,7 +329,6 @@ fn send_holds_for_all_pending_keys(
                     pending_key.hold_sent = true;
                 }
             } else {
-                // If not an overlay, send hold immediately.
                 press_keys(virt_keyboard, hold, config.no_emit)?;
                 pending_key.hold_sent = true;
             }
