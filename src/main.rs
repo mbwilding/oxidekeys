@@ -7,6 +7,7 @@ use anyhow::{Result, anyhow, bail};
 use evdev::Device as EvDevDevice;
 use evdev::{EventType, KeyCode};
 use std::collections::HashMap;
+use std::fs;
 use std::sync::Arc;
 use std::sync::Mutex;
 use std::thread;
@@ -101,8 +102,22 @@ fn release(device: &mut UInputDevice, code: KeyCode, no_emit: bool) -> Result<()
 }
 
 fn main() -> Result<()> {
-    let config_content = std::fs::read_to_string("config.yaml")?;
-    let config: Config = serde_yaml::from_str(&config_content)?;
+    let config_path = dirs::config_dir()
+        .unwrap_or_else(|| std::path::PathBuf::from("~/.config"))
+        .join("interception-rust")
+        .join("config.yaml");
+
+    let config: Config;
+    if !config_path.exists() {
+        config = Config::default();
+        fs::create_dir_all(config_path.parent().unwrap())?;
+        let config_yaml = serde_yaml::to_string(&config)?;
+        fs::write(&config_path, config_yaml)?;
+        println!("Default config written to {}", config_path.display());
+    } else {
+        let config_content = fs::read_to_string(&config_path)?;
+        config = serde_yaml::from_str(&config_content)?;
+    }
     println!("Config: {:#?}", config);
 
     let devices = open_keyboard_devices(&config)?;

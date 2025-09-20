@@ -1,0 +1,17 @@
+# Interception Rust
+
+~/.config/interception-rust/config.yml
+
+```yml
+keyboards:
+  AT Translated Set 2 keyboard:
+    KEY_SPACE:
+      tap: KEY_SPACE
+      hold: KEY_LEFTSHIFT
+    KEY_LEFTSHIFT:
+      tap: KEY_ESC
+      hold: KEY_LEFTMETA
+    KEY_CAPSLOCK:
+      tap: KEY_BACKSPACE
+      hold: KEY_LEFTCTRL
+```

@@ -45,6 +45,15 @@ pub(crate) struct Config {
     pub no_emit: bool,
 }
 
+impl Default for Config {
+    fn default() -> Self {
+        Self {
+            keyboards: default_keyboards(),
+            no_emit: default_no_emit(),
+        }
+    }
+}
+
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 pub(crate) struct RemapAction {
     /// Tap key
