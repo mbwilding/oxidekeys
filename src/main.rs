@@ -169,20 +169,16 @@ fn process(mut device: EvDevDevice, mut virt_keyboard: UInputDevice, config: Con
                         if !pending_key.hold_sent {
                             press(&mut virt_keyboard, pending_key.remap.tap, config.no_emit)?;
                             release(&mut virt_keyboard, pending_key.remap.tap, config.no_emit)?;
-                        } else {
-                            if let Some(hold_code) = pending_key.remap.hold {
-                                release(&mut virt_keyboard, hold_code, config.no_emit)?;
-                            }
-                        }
-                    } else {
-                        if pending_key.hold_sent {
-                            if let Some(hold_code) = pending_key.remap.hold {
-                                release(&mut virt_keyboard, hold_code, config.no_emit)?;
-                            }
                         } else if let Some(hold_code) = pending_key.remap.hold {
-                            press(&mut virt_keyboard, hold_code, config.no_emit)?;
                             release(&mut virt_keyboard, hold_code, config.no_emit)?;
                         }
+                    } else if pending_key.hold_sent {
+                        if let Some(hold_code) = pending_key.remap.hold {
+                            release(&mut virt_keyboard, hold_code, config.no_emit)?;
+                        }
+                    } else if let Some(hold_code) = pending_key.remap.hold {
+                        press(&mut virt_keyboard, hold_code, config.no_emit)?;
+                        release(&mut virt_keyboard, hold_code, config.no_emit)?;
                     }
                 } else if let Some(&remap) = config.remaps.get(&key) {
                     release(&mut virt_keyboard, remap.tap, config.no_emit)?;
