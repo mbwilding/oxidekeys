@@ -225,24 +225,32 @@ fn handle_release(
     key: KeyCode,
 ) -> Result<()> {
     if let Some(pending_key) = pending.remove(&key) {
+        // The key was pending – it had a mapping with a hold option
         if pending_key.remap.hold.is_some() {
             if !pending_key.hold_sent {
+                // If the hold action was not sent then treat the key press as a tap
                 press(virt_keyboard, pending_key.remap.tap, config.no_emit)?;
                 release(virt_keyboard, pending_key.remap.tap, config.no_emit)?;
             } else if let Some(hold_code) = pending_key.remap.hold {
+                // The key was held: send the release for the hold action
                 release(virt_keyboard, hold_code, config.no_emit)?;
             }
         } else if pending_key.hold_sent {
+            // This branch handles a scenario where even if the key didn't have a hold (should be rare)
+            // if somehow a hold event was sent, then release the hold
             if let Some(hold_code) = pending_key.remap.hold {
                 release(virt_keyboard, hold_code, config.no_emit)?;
             }
         } else if let Some(hold_code) = pending_key.remap.hold {
+            // As a fallback, if there is still a hold defined, send a quick press & release for the hold
             press(virt_keyboard, hold_code, config.no_emit)?;
             release(virt_keyboard, hold_code, config.no_emit)?;
         }
     } else if let Some(&remap) = remaps.get(&key) {
+        // The key is mapped (but it wasn't recorded as pending) so simply send a release for the tap action
         release(virt_keyboard, remap.tap, config.no_emit)?;
     } else {
+        // The key does not match any mapping so send a normal release event
         release(virt_keyboard, key, config.no_emit)?;
     }
     Ok(())
