@@ -17,6 +17,7 @@ pub(crate) struct PendingKey {
     pub remap: RemapAction,
     pub hold_sent: bool,
     pub overlap_hold_sent: bool,
+    pub tap_sent: bool,
     pub time_pressed: Instant,
     pub timer_fired: bool,
 }
@@ -164,17 +165,11 @@ pub(crate) fn keyboard_processor(keyboard: Keyboard, config: &Config) -> Result<
                                     }
                                     keys_down.insert(key);
                                     for remapped_key in remapped_keys.clone() {
-                                        if let Some(remap) = mappings.get(&remapped_key) {
-                                            let schedule = if remap.hrm == Some(true) {
-                                                remap.hold.is_some()
-                                            } else {
-                                                remap.tap.is_some() && remap.hold.is_some()
-                                            };
-                                            if schedule {
+                                        if let Some(remap) = mappings.get(&remapped_key)
+                                            && remap.hrm == Some(true) && remap.hold.is_some() {
                                                 let duration = Duration::from_millis(remap.hrm_term.unwrap_or(config.globals.hrm_term) as u64);
                                                 schedule_pending_key_timer(remapped_key, duration, timer_tx.clone());
                                             }
-                                        }
                                         handle_key_down(
                                             &mut virt_keyboard,
                                             config,
@@ -199,14 +194,19 @@ pub(crate) fn keyboard_processor(keyboard: Keyboard, config: &Config) -> Result<
             recv(timer_rx) -> msg => {
                 if let Ok(TimerMsg::HoldTimeout(key)) = msg
                     && let Some(pending_key) = pending.get_mut(&key)
-                        && !pending_key.hold_sent && !pending_key.timer_fired {
-                            let remap = &pending_key.remap;
-                            if let Some(hold) = &remap.hold {
-                                press_keys(&mut virt_keyboard, hold, config.globals.no_emit)?;
-                                pending_key.hold_sent = true;
+                    && !pending_key.hold_sent && !pending_key.timer_fired {
+                        let remap = &pending_key.remap;
+                        if remap.hrm == Some(true)
+                            && pending_key.tap_sent {
+                                pending_key.timer_fired = true;
+                                return Ok(());
                             }
-                            pending_key.timer_fired = true;
+                        if let Some(hold) = &remap.hold {
+                            press_keys(&mut virt_keyboard, hold, config.globals.no_emit)?;
+                            pending_key.hold_sent = true;
                         }
+                        pending_key.timer_fired = true;
+                    }
             }
         }
     }
@@ -281,6 +281,7 @@ fn add_pending(pending: &mut Pending, key: KeyCode, remap: &RemapAction) {
         time_pressed: Instant::now(),
         timer_fired: false,
         overlap_hold_sent: false,
+        tap_sent: false,
     });
 }
 
@@ -324,7 +325,9 @@ fn handle_key_up(
             let elapsed = pending_key.time_pressed.elapsed();
 
             if elapsed < Duration::from_millis(hrm_term as u64) {
-                if let Some(tap) = remap.tap {
+                if let Some(tap) = remap.tap
+                    && !pending_key.tap_sent
+                {
                     press_keys(virt_keyboard, &tap, config.globals.no_emit)?;
                     release_keys(virt_keyboard, &tap, config.globals.no_emit)?;
                 }
