@@ -204,11 +204,7 @@ fn default_layers() -> HashMap<String, HashMap<KeyCode, HashMap<KeyCode, Vec<Key
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub(crate) struct Config {
-    #[serde(default = "default_no_emit")]
-    pub no_emit: bool,
-
-    #[serde(default = "default_hrm_term")]
-    pub hrm_term: u16,
+    pub globals: Globals,
 
     #[serde(default = "default_keyboards")]
     pub keyboards: HashMap<String, HashMap<KeyCode, RemapAction>>,
@@ -217,11 +213,22 @@ pub(crate) struct Config {
     pub layers: HashMap<String, HashMap<KeyCode, HashMap<KeyCode, Vec<KeyCode>>>>,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub(crate) struct Globals {
+    #[serde(default = "default_no_emit")]
+    pub no_emit: bool,
+
+    #[serde(default = "default_hrm_term")]
+    pub hrm_term: u16,
+}
+
 impl Default for Config {
     fn default() -> Self {
         Self {
-            no_emit: default_no_emit(),
-            hrm_term: default_hrm_term(),
+            globals: Globals {
+                no_emit: default_no_emit(),
+                hrm_term: default_hrm_term(),
+            },
             keyboards: default_keyboards(),
             layers: default_layers(),
         }
