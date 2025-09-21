@@ -12,19 +12,19 @@ pub(crate) fn config() -> Result<Config> {
         None => dirs::config_dir()
             .unwrap_or_else(|| std::path::PathBuf::from("~/.config"))
             .join("oxidekeys")
-            .join("config.yml"),
+            .join("config.toml"),
     };
 
     let config = if !config_path.exists() {
         let config = Config::default();
         fs::create_dir_all(config_path.parent().unwrap())?;
-        let config_yaml = serde_yaml::to_string(&config)?;
-        fs::write(&config_path, config_yaml)?;
+        let serialized = toml::to_string_pretty(&config)?;
+        fs::write(&config_path, serialized)?;
         info!("Default config written to {}", config_path.display());
         config
     } else {
         let config_content = fs::read_to_string(&config_path)?;
-        serde_yaml::from_str(&config_content)?
+        toml::from_str(&config_content)?
     };
 
     debug!("Config: {:#?}", config);
@@ -37,7 +37,7 @@ fn default_no_emit() -> bool {
 }
 
 fn default_hrm_term() -> u16 {
-    120
+    144
 }
 
 fn default_keyboards() -> HashMap<String, HashMap<KeyCode, RemapAction>> {
