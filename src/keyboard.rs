@@ -16,6 +16,7 @@ type Pending = HashMap<KeyCode, PendingKey>;
 pub(crate) struct PendingKey {
     pub remap: RemapAction,
     pub hold_sent: bool,
+    pub overlap_hold_sent: bool,
     pub time_pressed: Instant,
     pub timer_fired: bool,
 }
@@ -148,6 +149,19 @@ pub(crate) fn keyboard_processor(keyboard: Keyboard, config: &Config) -> Result<
                             let remapped_keys = resolve_layered_keys(key, &active_layers, &layers);
                             match state {
                                 PRESS => {
+                                    for (pending_key_code, pending_key) in pending.iter_mut() {
+                                        if pending_key.remap.hrm != Some(true)
+                                            && pending_key.remap.tap.is_some()
+                                            && pending_key.remap.hold.is_some()
+                                            && !pending_key.hold_sent
+                                            && !pending_key.overlap_hold_sent
+                                            && keys_down.contains(pending_key_code)
+                                        {
+                                            press_keys(&mut virt_keyboard, pending_key.remap.hold.as_ref().unwrap(), config.globals.no_emit)?;
+                                            pending_key.hold_sent = true;
+                                            pending_key.overlap_hold_sent = true;
+                                        }
+                                    }
                                     keys_down.insert(key);
                                     for remapped_key in remapped_keys.clone() {
                                         if let Some(remap) = mappings.get(&remapped_key) {
@@ -266,6 +280,7 @@ fn add_pending(pending: &mut Pending, key: KeyCode, remap: &RemapAction) {
         hold_sent: false,
         time_pressed: Instant::now(),
         timer_fired: false,
+        overlap_hold_sent: false,
     });
 }
 
@@ -315,6 +330,10 @@ fn handle_key_up(
                 }
             } else if remap.hold.is_some() && pending_key.hold_sent {
                 release_keys(virt_keyboard, &remap.hold.unwrap(), config.globals.no_emit)?;
+            }
+        } else if pending_key.overlap_hold_sent {
+            if let Some(hold) = remap.hold {
+                release_keys(virt_keyboard, &hold, config.globals.no_emit)?;
             }
         } else {
             match (remap.tap, remap.hold, pending_key.hold_sent) {
