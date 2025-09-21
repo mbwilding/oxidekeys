@@ -1,9 +1,11 @@
 mod config;
 mod consts;
 mod keyboard;
-mod structs;
 
-use crate::{config::config, keyboard::*};
+use crate::{
+    config::config,
+    keyboard::{open_keyboard_devices, process},
+};
 use anyhow::Result;
 use std::thread;
 

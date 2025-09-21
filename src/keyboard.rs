@@ -1,5 +1,5 @@
+use crate::config::{Config, RemapAction};
 use crate::consts::*;
-use crate::structs::*;
 use anyhow::{Result, anyhow, bail};
 use evdev::Device as EvDevDevice;
 use evdev::{EventType, KeyCode};
@@ -10,6 +10,17 @@ use std::time::Duration;
 use std::time::Instant;
 use udev::Enumerator;
 use uinput::device::Device as UInputDevice;
+
+pub(crate) struct PendingKey {
+    pub remap: RemapAction,
+    pub hold_sent: bool,
+    pub time_pressed: Instant,
+}
+
+pub(crate) struct Keyboard {
+    pub device: EvDevDevice,
+    pub mappings: HashMap<KeyCode, RemapAction>,
+}
 
 pub(crate) fn open_keyboard_devices(config: &Config) -> Result<Vec<Keyboard>> {
     debug!("Detecting keyboards");
