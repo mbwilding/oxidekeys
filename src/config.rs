@@ -12,7 +12,7 @@ pub(crate) fn config() -> Result<Config> {
         None => dirs::config_dir()
             .unwrap_or_else(|| std::path::PathBuf::from("~/.config"))
             .join("oxidekeys")
-            .join("config.rson"),
+            .join("config.yml"),
     };
 
     let config = if !config_path.exists() {
