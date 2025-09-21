@@ -32,38 +32,19 @@ pub(crate) fn config() -> Result<Config> {
     Ok(config)
 }
 
+pub(crate) type Keyboards = HashMap<String, KeyboardConfig>;
+pub(crate) type Mappings = HashMap<KeyCode, RemapAction>;
+pub(crate) type Layers = HashMap<String, HashMap<KeyCode, HashMap<KeyCode, Vec<KeyCode>>>>;
+
 fn default_no_emit() -> bool {
     false
 }
+
 fn default_hrm_term() -> u16 {
     144
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub(crate) struct Config {
-    pub globals: Globals,
-    #[serde(default = "default_keyboards")]
-    pub keyboards: HashMap<String, KeyboardConfig>,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub(crate) struct Globals {
-    #[serde(default = "default_no_emit")]
-    pub no_emit: bool,
-    #[serde(default = "default_hrm_term")]
-    pub hrm_term: u16,
-}
-
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
-pub(crate) struct KeyboardConfig {
-    #[serde(default = "default_mappings")]
-    pub mappings: HashMap<KeyCode, RemapAction>,
-    #[serde(default = "default_layers")]
-    pub layers: HashMap<String, HashMap<KeyCode, HashMap<KeyCode, Vec<KeyCode>>>>,
-}
-
-// Defaults for KeyboardConfig fields
-fn default_mappings() -> HashMap<KeyCode, RemapAction> {
+fn default_mappings() -> Mappings {
     HashMap::from([
         #[allow(clippy::needless_update)]
         (
@@ -160,7 +141,7 @@ fn default_mappings() -> HashMap<KeyCode, RemapAction> {
     ])
 }
 
-fn default_layers() -> HashMap<String, HashMap<KeyCode, HashMap<KeyCode, Vec<KeyCode>>>> {
+fn default_layers() -> Layers {
     HashMap::from([
         (
             "Navigation".into(),
@@ -224,7 +205,7 @@ fn default_layers() -> HashMap<String, HashMap<KeyCode, HashMap<KeyCode, Vec<Key
     ])
 }
 
-fn default_keyboards() -> HashMap<String, KeyboardConfig> {
+fn default_keyboards() -> Keyboards {
     HashMap::from([(
         "AT Translated Set 2 keyboard".to_owned(),
         KeyboardConfig {
@@ -232,6 +213,29 @@ fn default_keyboards() -> HashMap<String, KeyboardConfig> {
             layers: default_layers(),
         },
     )])
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub(crate) struct Config {
+    pub globals: Globals,
+    #[serde(default = "default_keyboards")]
+    pub keyboards: Keyboards,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub(crate) struct Globals {
+    #[serde(default = "default_no_emit")]
+    pub no_emit: bool,
+    #[serde(default = "default_hrm_term")]
+    pub hrm_term: u16,
+}
+
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub(crate) struct KeyboardConfig {
+    #[serde(default = "default_mappings")]
+    pub mappings: Mappings,
+    #[serde(default = "default_layers")]
+    pub layers: Layers,
 }
 
 impl Default for Config {

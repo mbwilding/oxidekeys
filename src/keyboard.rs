@@ -1,4 +1,4 @@
-use crate::config::{Config, KeyboardConfig, RemapAction};
+use crate::config::{Config, KeyboardConfig, Layers, Mappings, RemapAction};
 use crate::consts::*;
 use anyhow::{Result, anyhow, bail};
 use evdev::Device as EvDevDevice;
@@ -10,6 +10,8 @@ use std::time::Duration;
 use std::time::Instant;
 use udev::Enumerator;
 use uinput::device::Device as UInputDevice;
+
+type Pending = HashMap<KeyCode, PendingKey>;
 
 pub(crate) struct PendingKey {
     pub remap: RemapAction,
@@ -91,13 +93,13 @@ pub(crate) fn create_virtual_keyboard(name: &str) -> Result<UInputDevice> {
     Ok(device)
 }
 
-pub(crate) fn process(keyboard: Keyboard, config: &Config) -> Result<()> {
+pub(crate) fn keyboard_processor(keyboard: Keyboard, config: &Config) -> Result<()> {
     let mut virt_keyboard = create_virtual_keyboard(keyboard.device.name().unwrap())?;
     let mut device = keyboard.device;
     let mappings = keyboard.config.mappings;
     let layers = keyboard.config.layers;
 
-    let mut pending: HashMap<KeyCode, PendingKey> = HashMap::new();
+    let mut pending: Pending = HashMap::new();
     let mut keys_down: HashSet<KeyCode> = HashSet::new();
     let mut active_layers: HashSet<String> = HashSet::new();
     let mut flush_keys = Vec::new();
@@ -247,7 +249,7 @@ fn is_modifier(key: KeyCode) -> bool {
 fn resolve_layered_keys(
     key: KeyCode,
     active_layers: &HashSet<String>,
-    layers: &HashMap<String, HashMap<KeyCode, HashMap<KeyCode, Vec<KeyCode>>>>,
+    layers: &Layers,
 ) -> Vec<KeyCode> {
     for layer in active_layers {
         if let Some(layer_map) = layers.get(layer) {
@@ -306,7 +308,7 @@ fn release_keys(device: &mut UInputDevice, keys: &[KeyCode], no_emit: bool) -> R
     Ok(())
 }
 
-fn add_pending(pending: &mut HashMap<KeyCode, PendingKey>, key: KeyCode, remap: &RemapAction) {
+fn add_pending(pending: &mut Pending, key: KeyCode, remap: &RemapAction) {
     pending.entry(key).or_insert(PendingKey {
         remap: remap.clone(),
         hold_sent: false,
@@ -314,14 +316,14 @@ fn add_pending(pending: &mut HashMap<KeyCode, PendingKey>, key: KeyCode, remap: 
     });
 }
 
-fn remove_pending(pending: &mut HashMap<KeyCode, PendingKey>, key: &KeyCode) -> Option<PendingKey> {
+fn remove_pending(pending: &mut Pending, key: &KeyCode) -> Option<PendingKey> {
     pending.remove(key)
 }
 
 fn send_holds_for_all_pending_keys(
     virt_keyboard: &mut UInputDevice,
     config: &Config,
-    pending: &mut HashMap<KeyCode, PendingKey>,
+    pending: &mut Pending,
     keys_down: &HashSet<KeyCode>,
 ) -> Result<()> {
     for (pending_keycode, pending_key) in pending.iter_mut() {
@@ -362,11 +364,11 @@ fn send_holds_for_all_pending_keys(
 fn handle_key_down(
     virt_keyboard: &mut UInputDevice,
     config: &Config,
-    pending: &mut HashMap<KeyCode, PendingKey>,
+    pending: &mut Pending,
     key: KeyCode,
-    remaps: &HashMap<KeyCode, RemapAction>,
+    mappings: &Mappings,
 ) -> Result<()> {
-    if let Some(remap) = remaps.get(&key) {
+    if let Some(remap) = mappings.get(&key) {
         if let Some(ref keys) = remap.tap
             && remap.hold.is_none()
         {
@@ -383,7 +385,7 @@ fn handle_key_down(
 fn handle_key_up(
     virt_keyboard: &mut UInputDevice,
     config: &Config,
-    pending: &mut HashMap<KeyCode, PendingKey>,
+    pending: &mut Pending,
     key: KeyCode,
 ) -> Result<()> {
     if let Some(pending_key) = remove_pending(pending, &key) {

@@ -4,7 +4,7 @@ mod keyboard;
 
 use crate::{
     config::config,
-    keyboard::{open_keyboard_devices, process},
+    keyboard::{open_keyboard_devices, keyboard_processor},
 };
 use anyhow::Result;
 use std::thread;
@@ -19,7 +19,7 @@ fn main() -> Result<()> {
         let config = config.clone();
 
         let handle = thread::spawn(move || {
-            process(keyboard, &config).unwrap();
+            keyboard_processor(keyboard, &config).unwrap();
         });
 
         handles.push(handle);
