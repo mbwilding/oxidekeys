@@ -4,7 +4,7 @@ mod keyboard;
 
 use crate::{
     config::config,
-    keyboard::{open_keyboard_devices, keyboard_processor},
+    keyboard::{keyboard_processor, open_keyboard_devices},
 };
 use anyhow::Result;
 use std::thread;

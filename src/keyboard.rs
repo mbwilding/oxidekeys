@@ -1,11 +1,11 @@
 use crate::config::{Config, KeyboardConfig, Layers, Mappings, RemapAction};
 use crate::consts::*;
 use anyhow::{Result, anyhow, bail};
+use crossbeam_channel::{Receiver, Sender, select, unbounded};
 use evdev::Device as EvDevDevice;
 use evdev::{EventType, KeyCode};
 use log::{debug, info};
 use std::collections::{HashMap, HashSet};
-use std::io::ErrorKind;
 use std::time::Duration;
 use std::time::Instant;
 use udev::Enumerator;
@@ -17,11 +17,16 @@ pub(crate) struct PendingKey {
     pub remap: RemapAction,
     pub hold_sent: bool,
     pub time_pressed: Instant,
+    pub timer_fired: bool,
 }
 
 pub(crate) struct Keyboard {
     pub device: EvDevDevice,
     pub config: KeyboardConfig,
+}
+
+enum TimerMsg {
+    HoldTimeout(KeyCode),
 }
 
 pub(crate) fn open_keyboard_devices(config: &Config) -> Result<Vec<Keyboard>> {
@@ -46,8 +51,6 @@ pub(crate) fn open_keyboard_devices(config: &Config) -> Result<Vec<Keyboard>> {
             };
             if name_matches {
                 info!("Keyboard Monitored: {:?}", keyboard.name());
-
-                keyboard.set_nonblocking(true)?;
 
                 if !config.globals.no_emit {
                     keyboard.grab()?;
@@ -102,148 +105,97 @@ pub(crate) fn keyboard_processor(keyboard: Keyboard, config: &Config) -> Result<
     let mut pending: Pending = HashMap::new();
     let mut keys_down: HashSet<KeyCode> = HashSet::new();
     let mut active_layers: HashSet<String> = HashSet::new();
-    let mut flush_keys = Vec::new();
+
+    let (timer_tx, timer_rx): (Sender<TimerMsg>, Receiver<TimerMsg>) = unbounded();
+
+    fn schedule_pending_key_timer(key: KeyCode, duration: Duration, tx: Sender<TimerMsg>) {
+        std::thread::spawn(move || {
+            std::thread::sleep(duration);
+            let _ = tx.send(TimerMsg::HoldTimeout(key));
+        });
+    }
 
     loop {
-        let events = match device.fetch_events() {
-            Ok(event) => event,
-            Err(error) if error.kind() == ErrorKind::WouldBlock => {
-                send_holds_for_all_pending_keys(
-                    &mut virt_keyboard,
-                    config,
-                    &mut pending,
-                    &keys_down,
-                )?;
-                std::thread::sleep(Duration::from_millis(1));
-                continue;
-            }
-            Err(err) => return Err(err.into()),
-        };
-
-        for event in events {
-            if event.event_type() != EventType::KEY {
-                continue;
-            }
-
-            let state = event.value();
-            let key = KeyCode(event.code());
-
-            let mut is_layer_trigger = false;
-            for (layer_name, layer_def) in &layers {
-                if layer_def.contains_key(&key) {
-                    is_layer_trigger = true;
-                    match state {
-                        PRESS => {
-                            active_layers.insert(layer_name.clone());
-                        }
-                        RELEASE => {
-                            active_layers.remove(layer_name);
-                        }
-                        _ => {}
-                    }
-                    break;
-                }
-            }
-            if is_layer_trigger {
-                match state {
-                    PRESS => {
-                        keys_down.insert(key);
-                    }
-                    RELEASE => {
-                        keys_down.remove(&key);
-                    }
-                    _ => {}
-                }
-                continue;
-            }
-
-            let remapped_keys = resolve_layered_keys(key, &active_layers, &layers);
-
-            match state {
-                PRESS => {
-                    flush_keys.clear();
-
-                    for (pending_keycode, pending_key) in pending.iter_mut() {
-                        let remap = &pending_key.remap;
-                        let is_dual_function_key =
-                            remap.hrm != Some(true) && remap.tap.is_some() && remap.hold.is_some();
-                        if is_dual_function_key
-                            && !pending_key.hold_sent
-                            && key != *pending_keycode
-                            && !is_modifier(key)
-                            && let Some(hold) = &remap.hold
-                        {
-                            press_keys(&mut virt_keyboard, hold, config.globals.no_emit)?;
-                            pending_key.hold_sent = true;
-                        }
-                    }
-
-                    for (pending_keycode, pending_key) in pending.iter_mut() {
-                        let remap = &pending_key.remap;
-                        if remap.hrm == Some(true)
-                            && !pending_key.hold_sent
-                            && !is_modifier(key)
-                            && key != *pending_keycode
-                        {
-                            let hrm_term = remap.hrm_term.unwrap_or(config.globals.hrm_term);
-                            let elapsed = pending_key.time_pressed.elapsed();
-                            if elapsed >= Duration::from_millis(hrm_term as u64) {
-                                if let Some(hold) = &remap.hold {
-                                    press_keys(&mut virt_keyboard, hold, config.globals.no_emit)?;
-                                    pending_key.hold_sent = true;
+        select! {
+            default => {
+                match device.fetch_events() {
+                    Err(err) => return Err(err.into()),
+                    Ok(events) => {
+                        for event in events {
+                            if event.event_type() != EventType::KEY { continue; }
+                            let state = event.value();
+                            let key = KeyCode(event.code());
+                            let mut is_layer_trigger = false;
+                            for (layer_name, layer_def) in &layers {
+                                if layer_def.contains_key(&key) {
+                                    is_layer_trigger = true;
+                                    match state {
+                                        PRESS => { active_layers.insert(layer_name.clone()); }
+                                        RELEASE => { active_layers.remove(layer_name); }
+                                        _ => {}
+                                    }
+                                    break;
                                 }
-                            } else {
-                                flush_keys.push(*pending_keycode);
+                            }
+                            if is_layer_trigger {
+                                match state {
+                                    PRESS => { keys_down.insert(key); }
+                                    RELEASE => { keys_down.remove(&key); }
+                                    _ => {}
+                                }
+                                continue;
+                            }
+                            let remapped_keys = resolve_layered_keys(key, &active_layers, &layers);
+                            match state {
+                                PRESS => {
+                                    keys_down.insert(key);
+                                    for remapped_key in remapped_keys.clone() {
+                                        if let Some(remap) = mappings.get(&remapped_key) {
+                                            let schedule = if remap.hrm == Some(true) {
+                                                remap.hold.is_some()
+                                            } else {
+                                                remap.tap.is_some() && remap.hold.is_some()
+                                            };
+                                            if schedule {
+                                                let duration = Duration::from_millis(remap.hrm_term.unwrap_or(config.globals.hrm_term) as u64);
+                                                schedule_pending_key_timer(remapped_key, duration, timer_tx.clone());
+                                            }
+                                        }
+                                        handle_key_down(
+                                            &mut virt_keyboard,
+                                            config,
+                                            &mut pending,
+                                            remapped_key,
+                                            &mappings,
+                                        )?;
+                                    }
+                                }
+                                RELEASE => {
+                                    keys_down.remove(&key);
+                                    for remapped_key in remapped_keys {
+                                        handle_key_up(&mut virt_keyboard, config, &mut pending, remapped_key)?;
+                                    }
+                                }
+                                _ => {}
                             }
                         }
                     }
-
-                    for flush_key in &flush_keys {
-                        if let Some(pending_key) = remove_pending(&mut pending, flush_key) {
-                            let remap = pending_key.remap;
-                            if let Some(tap) = remap.tap {
-                                press_keys(&mut virt_keyboard, &tap, config.globals.no_emit)?;
-                                release_keys(&mut virt_keyboard, &tap, config.globals.no_emit)?;
+                }
+            }
+            recv(timer_rx) -> msg => {
+                if let Ok(TimerMsg::HoldTimeout(key)) = msg
+                    && let Some(pending_key) = pending.get_mut(&key)
+                        && !pending_key.hold_sent && !pending_key.timer_fired {
+                            let remap = &pending_key.remap;
+                            if let Some(hold) = &remap.hold {
+                                press_keys(&mut virt_keyboard, hold, config.globals.no_emit)?;
+                                pending_key.hold_sent = true;
                             }
+                            pending_key.timer_fired = true;
                         }
-                    }
-
-                    keys_down.insert(key);
-                    for remapped_key in remapped_keys {
-                        handle_key_down(
-                            &mut virt_keyboard,
-                            config,
-                            &mut pending,
-                            remapped_key,
-                            &mappings,
-                        )?;
-                    }
-                }
-                RELEASE => {
-                    keys_down.remove(&key);
-                    for remapped_key in remapped_keys {
-                        handle_key_up(&mut virt_keyboard, config, &mut pending, remapped_key)?;
-                    }
-                }
-                _ => {}
             }
         }
     }
-}
-
-fn is_modifier(key: KeyCode) -> bool {
-    matches!(
-        KeyCode::new(key.0),
-        KeyCode::KEY_LEFTSHIFT
-            | KeyCode::KEY_RIGHTSHIFT
-            | KeyCode::KEY_LEFTCTRL
-            | KeyCode::KEY_RIGHTCTRL
-            | KeyCode::KEY_LEFTALT
-            | KeyCode::KEY_RIGHTALT
-            | KeyCode::KEY_LEFTMETA
-            | KeyCode::KEY_RIGHTMETA
-            | KeyCode::KEY_CAPSLOCK
-    )
 }
 
 fn resolve_layered_keys(
@@ -313,52 +265,12 @@ fn add_pending(pending: &mut Pending, key: KeyCode, remap: &RemapAction) {
         remap: remap.clone(),
         hold_sent: false,
         time_pressed: Instant::now(),
+        timer_fired: false,
     });
 }
 
 fn remove_pending(pending: &mut Pending, key: &KeyCode) -> Option<PendingKey> {
     pending.remove(key)
-}
-
-fn send_holds_for_all_pending_keys(
-    virt_keyboard: &mut UInputDevice,
-    config: &Config,
-    pending: &mut Pending,
-    keys_down: &HashSet<KeyCode>,
-) -> Result<()> {
-    for (pending_keycode, pending_key) in pending.iter_mut() {
-        let remap = &pending_key.remap;
-
-        if remap.hrm == Some(true) {
-            let hrm_term = remap.hrm_term.unwrap_or(config.globals.hrm_term);
-            let elapsed = pending_key.time_pressed.elapsed();
-            if let Some(hold) = &remap.hold
-                && !pending_key.hold_sent
-                && elapsed >= Duration::from_millis(hrm_term as u64)
-            {
-                press_keys(virt_keyboard, hold, config.globals.no_emit)?;
-                pending_key.hold_sent = true;
-            }
-        } else if let Some(hold) = &remap.hold
-            && !pending_key.hold_sent
-        {
-            let is_dual_function_key = remap.tap.is_some() && remap.hold.is_some();
-            if is_dual_function_key {
-                let other_non_modifiers = keys_down
-                    .iter()
-                    .filter(|&&k| k != *pending_keycode && !is_modifier(k))
-                    .count();
-                if other_non_modifiers > 0 {
-                    press_keys(virt_keyboard, hold, config.globals.no_emit)?;
-                    pending_key.hold_sent = true;
-                }
-            } else {
-                press_keys(virt_keyboard, hold, config.globals.no_emit)?;
-                pending_key.hold_sent = true;
-            }
-        }
-    }
-    Ok(())
 }
 
 fn handle_key_down(
