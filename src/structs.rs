@@ -1,3 +1,4 @@
+use evdev::Device as EvDevDevice;
 use evdev::KeyCode;
 use serde::{Deserialize, Serialize};
 use std::{collections::HashMap, time::Instant};
@@ -221,4 +222,9 @@ pub(crate) struct PendingKey {
     pub remap: RemapAction,
     pub hold_sent: bool,
     pub time_pressed: Instant,
+}
+
+pub(crate) struct Keyboard {
+    pub device: EvDevDevice,
+    pub mappings: HashMap<KeyCode, RemapAction>,
 }

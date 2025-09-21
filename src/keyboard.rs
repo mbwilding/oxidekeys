@@ -1,5 +1,5 @@
 use crate::consts::*;
-use crate::structs::{Config, PendingKey, RemapAction};
+use crate::structs::*;
 use anyhow::{Result, anyhow, bail};
 use evdev::Device as EvDevDevice;
 use evdev::{EventType, KeyCode};
@@ -11,22 +11,20 @@ use std::time::Instant;
 use udev::Enumerator;
 use uinput::device::Device as UInputDevice;
 
-pub(crate) fn open_keyboard_devices(
-    config: &Config,
-) -> Result<Vec<(EvDevDevice, HashMap<KeyCode, RemapAction>)>> {
+pub(crate) fn open_keyboard_devices(config: &Config) -> Result<Vec<Keyboard>> {
     debug!("Detecting keyboards");
 
     let mut enumerator = Enumerator::new()?;
     enumerator.match_subsystem("input")?;
     enumerator.match_property("ID_INPUT_KEYBOARD", "1")?;
 
-    let mut devices = Vec::new();
+    let mut keyboards = Vec::new();
 
     for device in enumerator.scan_devices()? {
         if let Some(devnode) = device.devnode()
-            && let Ok(mut dev) = EvDevDevice::open(devnode)
+            && let Ok(mut keyboard) = EvDevDevice::open(devnode)
         {
-            let name_matches = match dev.name() {
+            let name_matches = match keyboard.name() {
                 Some(name_value) => config
                     .keyboards
                     .iter()
@@ -34,15 +32,15 @@ pub(crate) fn open_keyboard_devices(
                 None => false,
             };
             if name_matches {
-                info!("Keyboard Monitored: {:?}", dev.name());
+                info!("Keyboard Monitored: {:?}", keyboard.name());
 
-                dev.set_nonblocking(true)?;
+                keyboard.set_nonblocking(true)?;
 
                 if !config.no_emit {
-                    dev.grab()?;
+                    keyboard.grab()?;
                 }
 
-                let keyboard_value = dev
+                let mappings = keyboard
                     .name()
                     .and_then(|name_value| {
                         config.keyboards.iter().find_map(|(k, v)| {
@@ -55,17 +53,20 @@ pub(crate) fn open_keyboard_devices(
                     })
                     .unwrap_or_default();
 
-                devices.push((dev, keyboard_value));
+                keyboards.push(Keyboard {
+                    device: keyboard,
+                    mappings,
+                });
             } else {
-                debug!("Keyboard Ignored: {:?}", dev.name());
+                debug!("Keyboard Ignored: {:?}", keyboard.name());
             }
         }
     }
 
-    if devices.is_empty() {
+    if keyboards.is_empty() {
         bail!("No keyboards found");
     } else {
-        Ok(devices)
+        Ok(keyboards)
     }
 }
 
@@ -79,12 +80,11 @@ pub(crate) fn create_virtual_keyboard(name: &str) -> Result<UInputDevice> {
     Ok(device)
 }
 
-pub(crate) fn process(
-    mut device: EvDevDevice,
-    mut virt_keyboard: UInputDevice,
-    remaps: &HashMap<KeyCode, RemapAction>,
-    config: &Config,
-) -> Result<()> {
+pub(crate) fn process(keyboard: Keyboard, config: &Config) -> Result<()> {
+    let mut virt_keyboard = create_virtual_keyboard(keyboard.device.name().unwrap())?;
+    let mut device = keyboard.device;
+    let mappings = keyboard.mappings;
+
     let mut pending: HashMap<KeyCode, PendingKey> = HashMap::new();
     let mut keys_down: HashSet<KeyCode> = HashSet::new();
     let mut active_layers: HashSet<String> = HashSet::new();
@@ -92,8 +92,8 @@ pub(crate) fn process(
 
     loop {
         let events = match device.fetch_events() {
-            Ok(ev) => ev,
-            Err(err) if err.kind() == ErrorKind::WouldBlock => {
+            Ok(event) => event,
+            Err(error) if error.kind() == ErrorKind::WouldBlock => {
                 send_holds_for_all_pending_keys(
                     &mut virt_keyboard,
                     config,
@@ -106,13 +106,13 @@ pub(crate) fn process(
             Err(err) => return Err(err.into()),
         };
 
-        for ev in events {
-            if ev.event_type() != EventType::KEY {
+        for event in events {
+            if event.event_type() != EventType::KEY {
                 continue;
             }
 
-            let state = ev.value();
-            let key = KeyCode(ev.code());
+            let state = event.value();
+            let key = KeyCode(event.code());
 
             let mut is_layer_trigger = false;
             for (layer_name, layer_def) in &config.layers {
@@ -201,7 +201,7 @@ pub(crate) fn process(
                             config,
                             &mut pending,
                             remapped_key,
-                            remaps,
+                            &mappings,
                         )?;
                     }
                 }
