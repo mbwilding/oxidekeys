@@ -1,4 +1,4 @@
-use crate::config::{Config, RemapAction};
+use crate::config::{Config, KeyboardConfig, RemapAction};
 use crate::consts::*;
 use anyhow::{Result, anyhow, bail};
 use evdev::Device as EvDevDevice;
@@ -19,7 +19,7 @@ pub(crate) struct PendingKey {
 
 pub(crate) struct Keyboard {
     pub device: EvDevDevice,
-    pub mappings: HashMap<KeyCode, RemapAction>,
+    pub config: KeyboardConfig,
 }
 
 pub(crate) fn open_keyboard_devices(config: &Config) -> Result<Vec<Keyboard>> {
@@ -51,7 +51,7 @@ pub(crate) fn open_keyboard_devices(config: &Config) -> Result<Vec<Keyboard>> {
                     keyboard.grab()?;
                 }
 
-                let mappings = keyboard
+                let keyboard_config = keyboard
                     .name()
                     .and_then(|name_value| {
                         config.keyboards.iter().find_map(|(k, v)| {
@@ -66,7 +66,7 @@ pub(crate) fn open_keyboard_devices(config: &Config) -> Result<Vec<Keyboard>> {
 
                 keyboards.push(Keyboard {
                     device: keyboard,
-                    mappings,
+                    config: keyboard_config,
                 });
             } else {
                 debug!("Keyboard Ignored: {:?}", keyboard.name());
@@ -94,7 +94,8 @@ pub(crate) fn create_virtual_keyboard(name: &str) -> Result<UInputDevice> {
 pub(crate) fn process(keyboard: Keyboard, config: &Config) -> Result<()> {
     let mut virt_keyboard = create_virtual_keyboard(keyboard.device.name().unwrap())?;
     let mut device = keyboard.device;
-    let mappings = keyboard.mappings;
+    let mappings = keyboard.config.mappings;
+    let layers = keyboard.config.layers;
 
     let mut pending: HashMap<KeyCode, PendingKey> = HashMap::new();
     let mut keys_down: HashSet<KeyCode> = HashSet::new();
@@ -126,7 +127,7 @@ pub(crate) fn process(keyboard: Keyboard, config: &Config) -> Result<()> {
             let key = KeyCode(event.code());
 
             let mut is_layer_trigger = false;
-            for (layer_name, layer_def) in &config.layers {
+            for (layer_name, layer_def) in &layers {
                 if layer_def.contains_key(&key) {
                     is_layer_trigger = true;
                     match state {
@@ -154,7 +155,7 @@ pub(crate) fn process(keyboard: Keyboard, config: &Config) -> Result<()> {
                 continue;
             }
 
-            let remapped_keys = resolve_layered_keys(key, &active_layers, config);
+            let remapped_keys = resolve_layered_keys(key, &active_layers, &layers);
 
             match state {
                 PRESS => {
@@ -246,10 +247,10 @@ fn is_modifier(key: KeyCode) -> bool {
 fn resolve_layered_keys(
     key: KeyCode,
     active_layers: &HashSet<String>,
-    config: &Config,
+    layers: &HashMap<String, HashMap<KeyCode, HashMap<KeyCode, Vec<KeyCode>>>>,
 ) -> Vec<KeyCode> {
     for layer in active_layers {
-        if let Some(layer_map) = config.layers.get(layer) {
+        if let Some(layer_map) = layers.get(layer) {
             for mapping in layer_map.values() {
                 if let Some(remapped) = mapping.get(&key) {
                     return remapped.clone();
