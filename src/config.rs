@@ -12,19 +12,19 @@ pub(crate) fn config() -> Result<Config> {
         None => dirs::config_dir()
             .unwrap_or_else(|| std::path::PathBuf::from("~/.config"))
             .join("oxidekeys")
-            .join("config.toml"),
+            .join("config.rson"),
     };
 
     let config = if !config_path.exists() {
         let config = Config::default();
         fs::create_dir_all(config_path.parent().unwrap())?;
-        let serialized = toml::to_string_pretty(&config)?;
+        let serialized = serde_yaml::to_string(&config)?;
         fs::write(&config_path, serialized)?;
         info!("Default config written to {}", config_path.display());
         config
     } else {
         let config_content = fs::read_to_string(&config_path)?;
-        toml::from_str(&config_content)?
+        serde_yaml::from_str(&config_content)?
     };
 
     debug!("Config: {:#?}", config);
