@@ -60,6 +60,7 @@ impl Pipeline {
 
     #[allow(clippy::too_many_arguments)]
     pub fn process_timer_event(
+        // Process timer events
         &mut self,
         virt: &mut UInputDevice,
         config: &Config,

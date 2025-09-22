@@ -1,7 +1,7 @@
 use crate::{
     config::{Config, KeyboardConfig},
     consts::*,
-    features::{layers::LayersFeature, overlaps::OverlapsFeature, terms::TermsFeature},
+    features::{Feature, layers::LayersFeature, overlaps::OverlapsFeature, terms::TermsFeature},
     io::create_virtual_keyboard,
     pipeline::Pipeline,
 };
@@ -85,7 +85,7 @@ pub(crate) fn keyboard_processor(keyboard: Keyboard, config: &Config) -> Result<
     let (tx, rx) = unbounded::<InputEvent>();
     let (timer_tx, timer_rx) = unbounded::<KeyCode>();
 
-    let mut features: Vec<Box<dyn crate::features::Feature + Send>> = Vec::new();
+    let mut features: Vec<Box<dyn Feature + Send>> = Vec::new();
 
     if *config.features.get("terms").unwrap_or(&true) {
         features.push(Box::new(TermsFeature::new(timer_tx.clone())));
