@@ -17,21 +17,22 @@ impl Pipeline {
         Self { features }
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub fn process_event(
         &mut self,
         virt: &mut UInputDevice,
-        cfg: &Config,
-        kcfg: &KeyboardConfig,
+        config: &Config,
+        kb_config: &KeyboardConfig,
         keys_down: &mut HashSet<KeyCode>,
         active_layers: &mut HashSet<String>,
         key: KeyCode,
         state: i32,
     ) -> Result<()> {
         let mut ctx = Context {
-            device_config: kcfg,
+            device_config: kb_config,
             keys_down,
             active_layers,
-            no_emit: cfg.globals.no_emit,
+            no_emit: config.globals.no_emit,
         };
 
         let mut action = FeatureResult::Continue(KeyEvent { key, state });

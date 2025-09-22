@@ -78,7 +78,7 @@ pub(crate) fn open_keyboard_devices(config: &Config) -> Result<Vec<Keyboard>> {
 pub(crate) fn keyboard_processor(keyboard: Keyboard, config: &Config) -> Result<()> {
     let mut virt_keyboard = create_virtual_keyboard(keyboard.device.name().unwrap())?;
     let mut device = keyboard.device;
-    let kcfg = keyboard.config;
+    let kb_config = keyboard.config;
     let mut keys_down: HashSet<KeyCode> = HashSet::new();
     let mut active_layers: HashSet<String> = HashSet::new();
 
@@ -121,7 +121,7 @@ pub(crate) fn keyboard_processor(keyboard: Keyboard, config: &Config) -> Result<
                 pipeline.process_event(
                     &mut virt_keyboard,
                     config,
-                    &kcfg,
+                    &kb_config,
                     &mut keys_down,
                     &mut active_layers,
                     key,
