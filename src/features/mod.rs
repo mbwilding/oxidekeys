@@ -1,5 +1,6 @@
 pub mod layers;
 pub mod overlaps;
+pub mod terms;
 
 use crate::config::KeyboardConfig;
 use anyhow::Result;

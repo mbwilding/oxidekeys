@@ -41,7 +41,7 @@ fn default_no_emit() -> bool {
     false
 }
 
-fn default_hrm_term() -> u16 {
+fn default_term() -> u16 {
     144
 }
 
@@ -212,7 +212,11 @@ fn default_keyboards() -> Keyboards {
 }
 
 fn default_features() -> Features {
-    HashMap::from([("layers".to_owned(), true), ("overlaps".to_owned(), true)])
+    HashMap::from([
+        ("overlaps".to_owned(), true),
+        ("terms".to_owned(), true),
+        ("layers".to_owned(), true),
+    ])
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -228,7 +232,7 @@ pub(crate) struct Config {
 pub(crate) struct Globals {
     #[serde(default = "default_no_emit")]
     pub no_emit: bool,
-    #[serde(default = "default_hrm_term")]
+    #[serde(default = "default_term")]
     pub term: u16,
 }
 
@@ -245,7 +249,7 @@ impl Default for Config {
         Self {
             globals: Globals {
                 no_emit: default_no_emit(),
-                term: default_hrm_term(),
+                term: default_term(),
             },
             features: default_features(),
             keyboards: default_keyboards(),

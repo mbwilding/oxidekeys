@@ -1,7 +1,7 @@
 use crate::{
     config::{Config, KeyboardConfig},
     consts::*,
-    features::{layers::LayersFeature, overlaps::OverlapsFeature},
+    features::{layers::LayersFeature, overlaps::OverlapsFeature, terms::TermsFeature},
     io::create_virtual_keyboard,
     pipeline::Pipeline,
 };
@@ -83,6 +83,10 @@ pub(crate) fn keyboard_processor(keyboard: Keyboard, config: &Config) -> Result<
     let mut active_layers: HashSet<String> = HashSet::new();
 
     let mut features: Vec<Box<dyn crate::features::Feature + Send>> = Vec::new();
+
+    if *config.features.get("terms").unwrap_or(&true) {
+        features.push(Box::new(TermsFeature::new()));
+    }
 
     if *config.features.get("overlaps").unwrap_or(&true) {
         features.push(Box::new(OverlapsFeature::new()));
