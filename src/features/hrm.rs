@@ -85,9 +85,10 @@ impl Feature for HrmFeature {
                             ]));
                         }
                     } else if let Some(hold) = remap.hold
-                        && pending_key.hold_sent {
-                            return Ok(FeatureResult::Emit(vec![OutputEvent::ReleaseMany(hold)]));
-                        }
+                        && pending_key.hold_sent
+                    {
+                        return Ok(FeatureResult::Emit(vec![OutputEvent::ReleaseMany(hold)]));
+                    }
                 } else if pending_key.overlap_hold_sent {
                     if let Some(hold) = remap.hold {
                         return Ok(FeatureResult::Emit(vec![OutputEvent::ReleaseMany(hold)]));
