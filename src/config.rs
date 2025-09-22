@@ -35,7 +35,7 @@ pub(crate) fn config() -> Result<Config> {
 pub(crate) type Keyboards = HashMap<String, KeyboardConfig>;
 pub(crate) type Mappings = HashMap<KeyCode, RemapAction>;
 pub(crate) type Layers = HashMap<String, HashMap<KeyCode, HashMap<KeyCode, Vec<KeyCode>>>>;
-pub(crate) type Plugins = HashMap<String, bool>;
+pub(crate) type Features = HashMap<String, bool>;
 
 fn default_no_emit() -> bool {
     false
@@ -216,10 +216,10 @@ fn default_keyboards() -> Keyboards {
     )])
 }
 
-fn default_plugins() -> Plugins {
+fn default_features() -> Features {
     HashMap::from([
-        ("hrm".to_owned(), false),
-        ("overlaps".to_owned(), false),
+        ("hrm".to_owned(), true),
+        ("overlaps".to_owned(), true),
         ("layers".to_owned(), true),
     ])
 }
@@ -227,8 +227,8 @@ fn default_plugins() -> Plugins {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub(crate) struct Config {
     pub globals: Globals,
-    #[serde(default = "default_plugins")]
-    pub plugins: HashMap<String, bool>,
+    #[serde(default = "default_features")]
+    pub features: HashMap<String, bool>,
     #[serde(default = "default_keyboards")]
     pub keyboards: Keyboards,
 }
@@ -256,7 +256,7 @@ impl Default for Config {
                 no_emit: default_no_emit(),
                 hrm_term: default_hrm_term(),
             },
-            plugins: default_plugins(),
+            features: default_features(),
             keyboards: default_keyboards(),
         }
     }

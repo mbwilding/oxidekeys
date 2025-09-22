@@ -1,14 +1,16 @@
-use crate::config::{Config, KeyboardConfig};
-use crate::features::hrm::{HrmFeature, TimerMsg};
-use crate::features::{
-    layers::LayersFeature,
-    overlaps::OverlapsFeature,
+use crate::{
+    config::{Config, KeyboardConfig},
+    features::{
+        hrm::{HrmFeature, TimerMsg},
+        layers::LayersFeature,
+        overlaps::OverlapsFeature,
+    },
+    io::create_virtual_keyboard,
+    pipeline::Pipeline,
+    state::Pending,
 };
-use crate::io::create_virtual_keyboard;
-use crate::pipeline::Pipeline;
-use crate::state::Pending;
 use anyhow::{Result, bail};
-use crossbeam_channel::{select, unbounded, Receiver};
+use crossbeam_channel::{Receiver, select, unbounded};
 use evdev::Device as EvDevDevice;
 use evdev::{EventType, InputEvent, KeyCode};
 use log::{debug, info};
@@ -85,17 +87,31 @@ pub(crate) fn keyboard_processor(keyboard: Keyboard, config: &Config) -> Result<
     let mut keys_down: HashSet<KeyCode> = HashSet::new();
     let mut active_layers: HashSet<String> = HashSet::new();
 
-    let hrm = HrmFeature::new();
-    let timer_rx: Receiver<TimerMsg> = hrm.receiver();
-    let mut pipeline = Pipeline::new(vec![
-        Box::new(LayersFeature::new()),
-        Box::new(OverlapsFeature::new()),
-        Box::new(hrm),
-    ]);
+    let layers_enabled = *config.features.get("layers").unwrap_or(&true);
+    let overlaps_enabled = *config.features.get("overlaps").unwrap_or(&true);
+    let hrm_enabled = *config.features.get("hrm").unwrap_or(&true);
+
+    let mut features: Vec<Box<dyn crate::features::Feature + Send>> = Vec::new();
+    if layers_enabled {
+        features.push(Box::new(LayersFeature::new()));
+    }
+    if overlaps_enabled {
+        features.push(Box::new(OverlapsFeature::new()));
+    }
+
+    let timer_rx: Receiver<TimerMsg>;
+    if hrm_enabled {
+        let hrm = HrmFeature::new();
+        timer_rx = hrm.receiver();
+        features.push(Box::new(hrm));
+    } else {
+        timer_rx = crossbeam_channel::never();
+    }
+
+    let mut pipeline = Pipeline::new(features);
 
     let (tx, rx) = unbounded::<InputEvent>();
 
-    // Producer thread: blocks on fetch_events and sends to channel
     std::thread::spawn(move || {
         loop {
             match device.fetch_events() {
