@@ -1,11 +1,11 @@
-use crate::config::{Config, KeyboardConfig};
-use crate::features::{Context, Feature, FeatureResult, KeyEvent};
-use crate::io::{emit, emit_passthrough};
-use crate::state::Pending;
+use crate::{
+    config::{Config, KeyboardConfig},
+    features::{Context, Feature, FeatureResult, KeyEvent},
+    io::{emit, emit_passthrough},
+};
 use anyhow::Result;
 use evdev::KeyCode;
 use std::collections::HashSet;
-use std::time::Instant;
 use uinput::device::Device as UInputDevice;
 
 pub struct Pipeline {
@@ -22,28 +22,19 @@ impl Pipeline {
         virt: &mut UInputDevice,
         cfg: &Config,
         kcfg: &KeyboardConfig,
-        pending: &mut Pending,
         keys_down: &mut HashSet<KeyCode>,
         active_layers: &mut HashSet<String>,
         key: KeyCode,
         state: i32,
     ) -> Result<()> {
-        let now = Instant::now();
         let mut ctx = Context {
-            config: cfg,
             device_config: kcfg,
-            pending,
             keys_down,
             active_layers,
-            now,
             no_emit: cfg.globals.no_emit,
         };
 
-        let mut action = FeatureResult::Continue(KeyEvent {
-            key,
-            state,
-            ts: now,
-        });
+        let mut action = FeatureResult::Continue(KeyEvent { key, state });
         for f in self.features.iter_mut() {
             action = match action {
                 FeatureResult::Continue(e) => f.on_event(e, &mut ctx)?,
@@ -59,34 +50,5 @@ impl Pipeline {
             FeatureResult::Emit(out) => emit(virt, out, ctx.no_emit),
             FeatureResult::Consume => Ok(()),
         }
-    }
-
-    pub fn process_timer(
-        &mut self,
-        virt: &mut UInputDevice,
-        cfg: &Config,
-        kcfg: &KeyboardConfig,
-        pending: &mut Pending,
-        keys_down: &mut HashSet<KeyCode>,
-        active_layers: &mut HashSet<String>,
-        key: KeyCode,
-    ) -> Result<()> {
-        let now = Instant::now();
-        let mut ctx = Context {
-            config: cfg,
-            device_config: kcfg,
-            pending,
-            keys_down,
-            active_layers,
-            now,
-            no_emit: cfg.globals.no_emit,
-        };
-
-        for f in self.features.iter_mut() {
-            if let Some(out) = f.on_timer(key, &mut ctx)? {
-                return emit(virt, out, ctx.no_emit);
-            }
-        }
-        Ok(())
     }
 }

@@ -217,11 +217,7 @@ fn default_keyboards() -> Keyboards {
 }
 
 fn default_features() -> Features {
-    HashMap::from([
-        ("hrm".to_owned(), true),
-        ("overlaps".to_owned(), true),
-        ("layers".to_owned(), true),
-    ])
+    HashMap::from([("layers".to_owned(), true)])
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

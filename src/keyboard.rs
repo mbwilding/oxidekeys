@@ -1,16 +1,11 @@
 use crate::{
     config::{Config, KeyboardConfig},
-    features::{
-        hrm::{HrmFeature, TimerMsg},
-        layers::LayersFeature,
-        overlaps::OverlapsFeature,
-    },
+    features::layers::LayersFeature,
     io::create_virtual_keyboard,
     pipeline::Pipeline,
-    state::Pending,
 };
 use anyhow::{Result, bail};
-use crossbeam_channel::{Receiver, select, unbounded};
+use crossbeam_channel::{select, unbounded};
 use evdev::Device as EvDevDevice;
 use evdev::{EventType, InputEvent, KeyCode};
 use log::{debug, info};
@@ -83,29 +78,14 @@ pub(crate) fn keyboard_processor(keyboard: Keyboard, config: &Config) -> Result<
     let mut virt_keyboard = create_virtual_keyboard(keyboard.device.name().unwrap())?;
     let mut device = keyboard.device;
     let kcfg = keyboard.config;
-    let mut pending: Pending = Default::default();
     let mut keys_down: HashSet<KeyCode> = HashSet::new();
     let mut active_layers: HashSet<String> = HashSet::new();
 
     let layers_enabled = *config.features.get("layers").unwrap_or(&true);
-    let overlaps_enabled = *config.features.get("overlaps").unwrap_or(&true);
-    let hrm_enabled = *config.features.get("hrm").unwrap_or(&true);
 
     let mut features: Vec<Box<dyn crate::features::Feature + Send>> = Vec::new();
     if layers_enabled {
         features.push(Box::new(LayersFeature::new()));
-    }
-    if overlaps_enabled {
-        features.push(Box::new(OverlapsFeature::new()));
-    }
-
-    let timer_rx: Receiver<TimerMsg>;
-    if hrm_enabled {
-        let hrm = HrmFeature::new();
-        timer_rx = hrm.receiver();
-        features.push(Box::new(hrm));
-    } else {
-        timer_rx = crossbeam_channel::never();
     }
 
     let mut pipeline = Pipeline::new(features);
@@ -140,25 +120,11 @@ pub(crate) fn keyboard_processor(keyboard: Keyboard, config: &Config) -> Result<
                     &mut virt_keyboard,
                     config,
                     &kcfg,
-                    &mut pending,
                     &mut keys_down,
                     &mut active_layers,
                     key,
                     state,
                 )?;
-            }
-            recv(timer_rx) -> msg => {
-                if let Ok(TimerMsg::HoldTimeout(key)) = msg {
-                    pipeline.process_timer(
-                        &mut virt_keyboard,
-                        config,
-                        &kcfg,
-                        &mut pending,
-                        &mut keys_down,
-                        &mut active_layers,
-                        key,
-                    )?;
-                }
             }
         }
     }
