@@ -82,10 +82,13 @@ pub(crate) fn keyboard_processor(keyboard: Keyboard, config: &Config) -> Result<
     let mut keys_down: HashSet<KeyCode> = HashSet::new();
     let mut active_layers: HashSet<String> = HashSet::new();
 
+    let (tx, rx) = unbounded::<InputEvent>();
+    let (timer_tx, timer_rx) = unbounded::<KeyCode>();
+
     let mut features: Vec<Box<dyn crate::features::Feature + Send>> = Vec::new();
 
     if *config.features.get("terms").unwrap_or(&true) {
-        features.push(Box::new(TermsFeature::new()));
+        features.push(Box::new(TermsFeature::new(timer_tx.clone())));
     }
 
     if *config.features.get("overlaps").unwrap_or(&true) {
@@ -97,8 +100,6 @@ pub(crate) fn keyboard_processor(keyboard: Keyboard, config: &Config) -> Result<
     }
 
     let mut pipeline = Pipeline::new(features);
-
-    let (tx, rx) = unbounded::<InputEvent>();
 
     std::thread::spawn(move || {
         loop {
@@ -133,6 +134,17 @@ pub(crate) fn keyboard_processor(keyboard: Keyboard, config: &Config) -> Result<
                     &mut active_layers,
                     key,
                     state,
+                )?;
+            }
+            recv(timer_rx) -> timer_key => {
+                let key = match timer_key { Ok(k) => k, Err(_) => break };
+                pipeline.process_timer_event(
+                    &mut virt_keyboard,
+                    config,
+                    &kb_config,
+                    &mut keys_down,
+                    &mut active_layers,
+                    key,
                 )?;
             }
         }

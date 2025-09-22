@@ -34,6 +34,7 @@ pub struct Context<'a> {
     pub keys_down: &'a mut HashSet<KeyCode>,
     pub active_layers: &'a mut HashSet<String>,
     pub no_emit: bool,
+    pub global_term: u16,
 }
 
 pub trait Feature {
@@ -60,6 +61,7 @@ mod tests {
         pub keys_down: HashSet<KeyCode>,
         pub active_layers: HashSet<String>,
         pub no_emit: bool,
+        pub global_term: u16,
     }
 
     impl TestContext {
@@ -69,6 +71,7 @@ mod tests {
                 keys_down: HashSet::new(),
                 active_layers: HashSet::new(),
                 no_emit: false,
+                global_term: 144,
             }
         }
 
@@ -81,6 +84,7 @@ mod tests {
                 keys_down: HashSet::new(),
                 active_layers: HashSet::new(),
                 no_emit: false,
+                global_term: 144,
             }
         }
 
@@ -93,6 +97,7 @@ mod tests {
                 keys_down: HashSet::new(),
                 active_layers: HashSet::new(),
                 no_emit: false,
+                global_term: 144,
             }
         }
 
@@ -102,6 +107,7 @@ mod tests {
                 keys_down: &mut self.keys_down,
                 active_layers: &mut self.active_layers,
                 no_emit: self.no_emit,
+                global_term: self.global_term,
             }
         }
     }

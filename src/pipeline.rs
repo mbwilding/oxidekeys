@@ -33,6 +33,7 @@ impl Pipeline {
             keys_down,
             active_layers,
             no_emit: config.globals.no_emit,
+            global_term: config.globals.term,
         };
 
         let mut feature_name = "raw";
@@ -55,5 +56,33 @@ impl Pipeline {
             FeatureResult::Emit(out) => emit(virt, out, ctx.no_emit, feature_name),
             FeatureResult::Consume => Ok(()),
         }
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    pub fn process_timer_event(
+        &mut self,
+        virt: &mut UInputDevice,
+        config: &Config,
+        kb_config: &KeyboardConfig,
+        keys_down: &mut HashSet<KeyCode>,
+        active_layers: &mut HashSet<String>,
+        key: KeyCode,
+    ) -> Result<()> {
+        let mut ctx = Context {
+            device_config: kb_config,
+            keys_down,
+            active_layers,
+            no_emit: config.globals.no_emit,
+            global_term: config.globals.term,
+        };
+
+        for feature in self.features.iter_mut() {
+            if let Some(output_events) = feature.on_timer(key, &mut ctx)? {
+                emit(virt, output_events, ctx.no_emit, feature.name())?;
+                break; // Only the first feature that handles the timer should emit
+            }
+        }
+
+        Ok(())
     }
 }
