@@ -84,12 +84,12 @@ pub(crate) fn keyboard_processor(keyboard: Keyboard, config: &Config) -> Result<
 
     let mut features: Vec<Box<dyn crate::features::Feature + Send>> = Vec::new();
 
-    if *config.features.get("layers").unwrap_or(&true) {
-        features.push(Box::new(LayersFeature::new()));
-    }
-
     if *config.features.get("overlaps").unwrap_or(&true) {
         features.push(Box::new(OverlapsFeature::new()));
+    }
+
+    if *config.features.get("layers").unwrap_or(&true) {
+        features.push(Box::new(LayersFeature::new()));
     }
 
     let mut pipeline = Pipeline::new(features);
