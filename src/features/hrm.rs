@@ -45,7 +45,6 @@ impl Feature for HrmFeature {
 
     fn on_event(&mut self, event: KeyEvent, ctx: &mut Context) -> Result<FeatureResult> {
         if event.state == PRESS {
-            // For each remapped key that is HRM with hold, start timer
             if let Some(remap) = ctx.device_config.mappings.get(&event.key)
                 && remap.hrm == Some(true)
                 && remap.hold.is_some()
@@ -56,7 +55,6 @@ impl Feature for HrmFeature {
                 schedule_pending_key_timer(event.key, duration, self.timer_tx.clone());
             }
 
-            // Add to pending or emit immediate tap-only
             if let Some(remap) = ctx.device_config.mappings.get(&event.key) {
                 if let Some(keys) = remap.tap.as_ref()
                     && remap.hold.is_none()
