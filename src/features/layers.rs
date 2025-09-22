@@ -48,7 +48,7 @@ impl Feature for LayersFeature {
         }
 
         let remapped =
-            resolve_layered_keys(event.key, &ctx.active_layers, &ctx.device_config.layers);
+            resolve_layered_keys(event.key, ctx.active_layers, &ctx.device_config.layers);
         if remapped.len() == 1 && remapped[0] == event.key {
             return Ok(FeatureResult::Continue(event));
         }

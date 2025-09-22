@@ -23,11 +23,10 @@ impl Feature for OverlapsFeature {
                     && !pending_key.hold_sent
                     && !pending_key.overlap_hold_sent
                     && ctx.keys_down.contains(pending_key_code)
+                    && let Some(_hold) = pending_key.remap.hold.as_ref()
                 {
-                    if let Some(_hold) = pending_key.remap.hold.as_ref() {
-                        pending_key.hold_sent = true;
-                        pending_key.overlap_hold_sent = true;
-                    }
+                    pending_key.hold_sent = true;
+                    pending_key.overlap_hold_sent = true;
                 }
             }
             ctx.keys_down.insert(event.key);

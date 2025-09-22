@@ -13,6 +13,7 @@ use std::time::Instant;
 pub struct KeyEvent {
     pub key: KeyCode,
     pub state: i32,
+    pub ts: Instant,
 }
 
 #[derive(Clone, Debug)]
