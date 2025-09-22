@@ -1,11 +1,12 @@
 use crate::config::{Config, KeyboardConfig};
-use crate::features::{hrm::HrmFeature, layers::LayersFeature, overlaps::OverlapsFeature};
+use crate::features::{hrm::{HrmFeature, TimerMsg}, layers::LayersFeature, overlaps::OverlapsFeature};
 use crate::io::create_virtual_keyboard;
 use crate::pipeline::Pipeline;
 use crate::state::Pending;
 use anyhow::{Result, bail};
 use evdev::Device as EvDevDevice;
-use evdev::{EventType, KeyCode};
+use evdev::{EventType, InputEvent, KeyCode};
+use crossbeam_channel::{unbounded, Receiver, select};
 use log::{debug, info};
 use std::collections::HashSet;
 use udev::Enumerator;
@@ -80,34 +81,70 @@ pub(crate) fn keyboard_processor(keyboard: Keyboard, config: &Config) -> Result<
     let mut keys_down: HashSet<KeyCode> = HashSet::new();
     let mut active_layers: HashSet<String> = HashSet::new();
 
+    // let mut hrm = HrmFeature::new();
+    // let timer_rx: Receiver<TimerMsg> = hrm.receiver();
     let mut pipeline = Pipeline::new(vec![
         Box::new(LayersFeature::new()),
         Box::new(OverlapsFeature::new()),
-        Box::new(HrmFeature::new()),
+        // Box::new(hrm),
     ]);
 
-    loop {
-        match device.fetch_events() {
-            Err(err) => return Err(err.into()),
-            Ok(events) => {
-                for event in events {
-                    if event.event_type() != EventType::KEY {
-                        continue;
+    let (tx, rx) = unbounded::<InputEvent>();
+
+    // Producer thread: blocks on fetch_events and sends to channel
+    std::thread::spawn(move || {
+        loop {
+            match device.fetch_events() {
+                Err(_) => {
+                    // Producer ends on error; consumer will observe disconnect
+                    break;
+                }
+                Ok(events) => {
+                    for event in events {
+                        // Best-effort send; if consumer dropped, exit
+                        if tx.send(event).is_err() {
+                            return;
+                        }
                     }
-                    let state = event.value();
-                    let key = KeyCode(event.code());
-                    pipeline.process_event(
-                        &mut virt_keyboard,
-                        config,
-                        &kcfg,
-                        &mut pending,
-                        &mut keys_down,
-                        &mut active_layers,
-                        key,
-                        state,
-                    )?;
                 }
             }
         }
+    });
+
+    // Consumer: multiplex input events and HRM timer
+    loop {
+        select! {
+            recv(rx) -> ev => {
+                let event = match ev { Ok(e) => e, Err(_) => break };
+                if event.event_type() != EventType::KEY { continue; }
+                let state = event.value();
+                let key = KeyCode(event.code());
+                pipeline.process_event(
+                    &mut virt_keyboard,
+                    config,
+                    &kcfg,
+                    &mut pending,
+                    &mut keys_down,
+                    &mut active_layers,
+                    key,
+                    state,
+                )?;
+            }
+            // recv(timer_rx) -> msg => {
+            //     if let Ok(TimerMsg::HoldTimeout(key)) = msg {
+            //         pipeline.process_timer(
+            //             &mut virt_keyboard,
+            //             config,
+            //             &kcfg,
+            //             &mut pending,
+            //             &mut keys_down,
+            //             &mut active_layers,
+            //             key,
+            //         )?;
+            //     }
+            // }
+        }
     }
+
+    Ok(())
 }

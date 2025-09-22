@@ -1,10 +1,10 @@
 use crate::features::{Context, Feature, FeatureResult, KeyEvent, OutputEvent};
 use anyhow::Result;
-use crossbeam_channel::{Receiver, Sender, select, unbounded};
+use crossbeam_channel::{Receiver, Sender, unbounded};
 use evdev::KeyCode;
 use std::time::Duration;
 
-enum TimerMsg {
+pub enum TimerMsg {
     HoldTimeout(KeyCode),
 }
 
@@ -21,6 +21,10 @@ impl HrmFeature {
             timer_rx: rx,
         }
     }
+
+    pub fn receiver(&self) -> Receiver<TimerMsg> {
+        self.timer_rx.clone()
+    }
 }
 
 fn schedule_pending_key_timer(key: KeyCode, duration: Duration, tx: Sender<TimerMsg>) {
@@ -36,25 +40,6 @@ impl Feature for HrmFeature {
     }
 
     fn on_event(&mut self, event: KeyEvent, ctx: &mut Context) -> Result<FeatureResult> {
-        // Drain timers non-blocking
-        select! {
-            default => {},
-            recv(self.timer_rx) -> msg => {
-                if let Ok(TimerMsg::HoldTimeout(key)) = msg
-                    && let Some(pending_key) = ctx.pending.get_mut(&key)
-                    && !pending_key.hold_sent && !pending_key.timer_fired {
-                        let remap = &pending_key.remap;
-                        if remap.hrm == Some(true) && pending_key.tap_sent {
-                            pending_key.timer_fired = true;
-                        } else if let Some(hold) = &remap.hold {
-                            // Emit hold immediately
-                            return Ok(FeatureResult::Emit(vec![OutputEvent::PressMany(hold.clone())]));
-                        }
-                        pending_key.timer_fired = true;
-                    }
-            }
-        }
-
         if event.state == crate::consts::PRESS {
             // For each remapped key that is HRM with hold, start timer
             if let Some(remap) = ctx.device_config.mappings.get(&event.key)
@@ -97,10 +82,10 @@ impl Feature for HrmFeature {
                                 OutputEvent::ReleaseMany(tap),
                             ]));
                         }
-                    } else if remap.hold.is_some() && pending_key.hold_sent {
-                        return Ok(FeatureResult::Emit(vec![OutputEvent::ReleaseMany(
-                            remap.hold.unwrap(),
-                        )]));
+                    } else if let Some(hold) = remap.hold {
+                        if pending_key.hold_sent {
+                            return Ok(FeatureResult::Emit(vec![OutputEvent::ReleaseMany(hold)]));
+                        }
                     }
                 } else if pending_key.overlap_hold_sent {
                     if let Some(hold) = remap.hold {
@@ -127,5 +112,29 @@ impl Feature for HrmFeature {
         } else {
             Ok(FeatureResult::Consume)
         }
+    }
+
+    fn on_timer(
+        &mut self,
+        key: KeyCode,
+        ctx: &mut Context,
+    ) -> Result<Option<Vec<OutputEvent>>> {
+        if let Some(pending_key) = ctx.pending.get_mut(&key)
+            && !pending_key.hold_sent
+            && !pending_key.timer_fired
+        {
+            let remap = &pending_key.remap;
+            if remap.hrm == Some(true) && pending_key.tap_sent {
+                pending_key.timer_fired = true;
+                return Ok(None);
+            }
+
+            if let Some(hold) = &remap.hold {
+                pending_key.hold_sent = true;
+                pending_key.timer_fired = true;
+                return Ok(Some(vec![OutputEvent::PressMany(hold.clone())]));
+            }
+        }
+        Ok(None)
     }
 }

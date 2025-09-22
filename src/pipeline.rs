@@ -60,4 +60,33 @@ impl Pipeline {
             FeatureResult::Consume => Ok(()),
         }
     }
+
+    pub fn process_timer(
+        &mut self,
+        virt: &mut UInputDevice,
+        cfg: &Config,
+        kcfg: &KeyboardConfig,
+        pending: &mut Pending,
+        keys_down: &mut HashSet<KeyCode>,
+        active_layers: &mut HashSet<String>,
+        key: KeyCode,
+    ) -> Result<()> {
+        let now = Instant::now();
+        let mut ctx = Context {
+            config: cfg,
+            device_config: kcfg,
+            pending,
+            keys_down,
+            active_layers,
+            now,
+            no_emit: cfg.globals.no_emit,
+        };
+
+        for f in self.features.iter_mut() {
+            if let Some(out) = f.on_timer(key, &mut ctx)? {
+                return emit(virt, out, ctx.no_emit);
+            }
+        }
+        Ok(())
+    }
 }
