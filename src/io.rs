@@ -2,6 +2,7 @@ use crate::consts::*;
 use crate::features::OutputEvent;
 use anyhow::{Result, anyhow};
 use evdev::KeyCode;
+use log::debug;
 use uinput::device::Device as UInputDevice;
 
 pub fn create_virtual_keyboard(name: &str) -> Result<UInputDevice> {
@@ -17,22 +18,26 @@ pub fn emit(device: &mut UInputDevice, events: Vec<OutputEvent>, no_emit: bool) 
     if no_emit {
         return Ok(());
     }
-    for e in events {
-        match e {
+    for event in &events {
+        match event {
             OutputEvent::Press(k) => {
                 device.write(EV_KEY, k.0 as i32, PRESS)?;
+                debug!("{:?} [PRESS]", k);
             }
             OutputEvent::Release(k) => {
                 device.write(EV_KEY, k.0 as i32, RELEASE)?;
+                debug!("{:?} [RELEASE]", k);
             }
             OutputEvent::PressMany(keys) => {
                 for k in keys {
                     device.write(EV_KEY, k.0 as i32, PRESS)?;
+                    debug!("{:?} [PRESS]", k);
                 }
             }
             OutputEvent::ReleaseMany(keys) => {
                 for k in keys {
                     device.write(EV_KEY, k.0 as i32, RELEASE)?;
+                    debug!("{:?} [RELEASE]", k);
                 }
             }
         }
@@ -52,5 +57,10 @@ pub fn emit_passthrough(
     }
     device.write(EV_KEY, key.0 as i32, state)?;
     device.synchronize()?;
+    debug!(
+        "{:?} [{}]",
+        key,
+        if state == PRESS { "PRESS" } else { "RELEASE" }
+    );
     Ok(())
 }
