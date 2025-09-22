@@ -35,10 +35,14 @@ impl Pipeline {
             no_emit: config.globals.no_emit,
         };
 
+        let mut feature_name = "raw";
+
         let mut action = FeatureResult::Continue(KeyEvent { key, state });
-        for f in self.features.iter_mut() {
+        for feature in self.features.iter_mut() {
+            feature_name = feature.name();
+
             action = match action {
-                FeatureResult::Continue(e) => f.on_event(e, &mut ctx)?,
+                FeatureResult::Continue(e) => feature.on_event(e, &mut ctx)?,
                 _ => action,
             };
             if !matches!(action, FeatureResult::Continue(_)) {
@@ -48,7 +52,7 @@ impl Pipeline {
 
         match action {
             FeatureResult::Continue(e) => emit_passthrough(virt, e.key, e.state, ctx.no_emit),
-            FeatureResult::Emit(out) => emit(virt, out, ctx.no_emit),
+            FeatureResult::Emit(out) => emit(virt, out, ctx.no_emit, feature_name),
             FeatureResult::Consume => Ok(()),
         }
     }

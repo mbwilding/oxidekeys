@@ -14,30 +14,36 @@ pub fn create_virtual_keyboard(name: &str) -> Result<UInputDevice> {
     Ok(device)
 }
 
-pub fn emit(device: &mut UInputDevice, events: Vec<OutputEvent>, no_emit: bool) -> Result<()> {
+pub fn emit(
+    device: &mut UInputDevice,
+    events: Vec<OutputEvent>,
+    no_emit: bool,
+    feature_name: &'static str,
+) -> Result<()> {
     if no_emit {
         return Ok(());
     }
+
     for event in &events {
         match event {
             OutputEvent::Press(k) => {
                 device.write(EV_KEY, k.0 as i32, PRESS)?;
-                debug!("{:?} [PRESS]", k);
+                debug!("{:?} [PRESS] [{}]", k, feature_name);
             }
             OutputEvent::Release(k) => {
                 device.write(EV_KEY, k.0 as i32, RELEASE)?;
-                debug!("{:?} [RELEASE]", k);
+                debug!("{:?} [RELEASE] [{}]", k, feature_name);
             }
             OutputEvent::PressMany(keys) => {
                 for k in keys {
                     device.write(EV_KEY, k.0 as i32, PRESS)?;
-                    debug!("{:?} [PRESS]", k);
+                    debug!("{:?} [PRESS] [{}]", k, feature_name);
                 }
             }
             OutputEvent::ReleaseMany(keys) => {
                 for k in keys {
                     device.write(EV_KEY, k.0 as i32, RELEASE)?;
-                    debug!("{:?} [RELEASE]", k);
+                    debug!("{:?} [RELEASE] [{}]", k, feature_name);
                 }
             }
         }
@@ -58,7 +64,7 @@ pub fn emit_passthrough(
     device.write(EV_KEY, key.0 as i32, state)?;
     device.synchronize()?;
     debug!(
-        "{:?} [{}]",
+        "{:?} [{}] [raw]",
         key,
         if state == PRESS { "PRESS" } else { "RELEASE" }
     );
