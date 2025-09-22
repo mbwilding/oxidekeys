@@ -22,6 +22,7 @@ impl Feature for LayersFeature {
 
     fn on_event(&mut self, event: KeyEvent, ctx: &mut Context) -> Result<FeatureResult> {
         let mut is_layer_trigger = false;
+
         for (layer_name, layer_def) in &ctx.device_config.layers {
             if layer_def.contains_key(&event.key) {
                 is_layer_trigger = true;
@@ -37,6 +38,7 @@ impl Feature for LayersFeature {
                 break;
             }
         }
+
         if is_layer_trigger {
             match event.state {
                 PRESS => {
@@ -55,6 +57,7 @@ impl Feature for LayersFeature {
         if remapped.len() == 1 && remapped[0] == event.key {
             return Ok(FeatureResult::Continue(event));
         }
+
         match event.state {
             PRESS => Ok(FeatureResult::Emit(vec![OutputEvent::PressMany(remapped)])),
             RELEASE => Ok(FeatureResult::Emit(vec![OutputEvent::ReleaseMany(

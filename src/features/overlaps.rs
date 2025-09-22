@@ -1,11 +1,5 @@
-use crate::{
-    config::Layers,
-    consts::*,
-    features::{Context, Feature, FeatureResult, KeyEvent, OutputEvent},
-};
+use crate::features::{Context, Feature, FeatureResult, KeyEvent};
 use anyhow::Result;
-use evdev::KeyCode;
-use std::collections::HashSet;
 
 pub struct OverlapsFeature;
 
@@ -20,7 +14,7 @@ impl Feature for OverlapsFeature {
         "overlaps"
     }
 
-    fn on_event(&mut self, event: KeyEvent, ctx: &mut Context) -> Result<FeatureResult> {
-        Ok(FeatureResult::Consume)
+    fn on_event(&mut self, event: KeyEvent, _ctx: &mut Context) -> Result<FeatureResult> {
+        Ok(FeatureResult::Continue(event))
     }
 }
