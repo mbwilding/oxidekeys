@@ -28,4 +28,4 @@ echo uinput | sudo tee /etc/modules-load.d/uinput.conf > /dev/null
 
 Default config location: `~/.config/oxidekeys/config.yml`
 
-You can also change the `hrm_term` per key, if not specified, it uses the global `hrm_term`.
+You can also change the `term` per key, if not specified, it uses the global `term`.

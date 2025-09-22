@@ -13,7 +13,9 @@ pub struct KeyEvent {
 
 #[derive(Clone, Debug)]
 pub enum OutputEvent {
+    #[allow(dead_code)]
     Press(KeyCode),
+    #[allow(dead_code)]
     Release(KeyCode),
     PressMany(Vec<KeyCode>),
     ReleaseMany(Vec<KeyCode>),
@@ -33,8 +35,12 @@ pub struct Context<'a> {
 }
 
 pub trait Feature {
+    #[allow(dead_code)]
     fn name(&self) -> &'static str;
+
     fn on_event(&mut self, event: KeyEvent, ctx: &mut Context) -> Result<FeatureResult>;
+
+    #[allow(dead_code)]
     fn on_timer(&mut self, _key: KeyCode, _ctx: &mut Context) -> Result<Option<Vec<OutputEvent>>> {
         Ok(None)
     }

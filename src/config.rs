@@ -53,6 +53,7 @@ fn default_mappings() -> Mappings {
             RemapAction {
                 tap: Some(vec![KeyCode::KEY_SPACE]),
                 hold: Some(vec![KeyCode::KEY_LEFTSHIFT]),
+                overlap: Some(true),
                 ..Default::default()
             },
         ),
@@ -78,7 +79,6 @@ fn default_mappings() -> Mappings {
             RemapAction {
                 tap: Some(vec![KeyCode::KEY_A]),
                 hold: Some(vec![KeyCode::KEY_LEFTCTRL]),
-                hrm: Some(true),
                 ..Default::default()
             },
         ),
@@ -88,7 +88,6 @@ fn default_mappings() -> Mappings {
             RemapAction {
                 tap: Some(vec![KeyCode::KEY_SEMICOLON]),
                 hold: Some(vec![KeyCode::KEY_RIGHTCTRL]),
-                hrm: Some(true),
                 ..Default::default()
             },
         ),
@@ -98,7 +97,6 @@ fn default_mappings() -> Mappings {
             RemapAction {
                 tap: Some(vec![KeyCode::KEY_S]),
                 hold: Some(vec![KeyCode::KEY_LEFTMETA]),
-                hrm: Some(true),
                 ..Default::default()
             },
         ),
@@ -108,7 +106,6 @@ fn default_mappings() -> Mappings {
             RemapAction {
                 tap: Some(vec![KeyCode::KEY_L]),
                 hold: Some(vec![KeyCode::KEY_RIGHTMETA]),
-                hrm: Some(true),
                 ..Default::default()
             },
         ),
@@ -118,7 +115,6 @@ fn default_mappings() -> Mappings {
             RemapAction {
                 tap: Some(vec![KeyCode::KEY_D]),
                 hold: Some(vec![KeyCode::KEY_LEFTALT]),
-                hrm: Some(true),
                 ..Default::default()
             },
         ),
@@ -128,7 +124,6 @@ fn default_mappings() -> Mappings {
             RemapAction {
                 tap: Some(vec![KeyCode::KEY_K]),
                 hold: Some(vec![KeyCode::KEY_RIGHTALT]),
-                hrm: Some(true),
                 ..Default::default()
             },
         ),
@@ -234,7 +229,7 @@ pub(crate) struct Globals {
     #[serde(default = "default_no_emit")]
     pub no_emit: bool,
     #[serde(default = "default_hrm_term")]
-    pub hrm_term: u16,
+    pub term: u16,
 }
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
@@ -250,7 +245,7 @@ impl Default for Config {
         Self {
             globals: Globals {
                 no_emit: default_no_emit(),
-                hrm_term: default_hrm_term(),
+                term: default_hrm_term(),
             },
             features: default_features(),
             keyboards: default_keyboards(),
@@ -260,12 +255,19 @@ impl Default for Config {
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub(crate) struct RemapAction {
+    /// Tap sequence
     #[serde(skip_serializing_if = "Option::is_none")]
     pub tap: Option<Vec<KeyCode>>,
+
+    /// Hold sequence
     #[serde(skip_serializing_if = "Option::is_none")]
     pub hold: Option<Vec<KeyCode>>,
+
+    /// Overlap mode
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub hrm: Option<bool>,
+    pub overlap: Option<bool>,
+
+    /// Term override
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub hrm_term: Option<u16>,
+    pub term: Option<u16>,
 }
