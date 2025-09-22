@@ -1,12 +1,15 @@
 use crate::config::{Config, KeyboardConfig};
-use crate::features::{hrm::{HrmFeature, TimerMsg}, layers::LayersFeature, overlaps::OverlapsFeature};
+use crate::features::{
+    layers::LayersFeature,
+    overlaps::OverlapsFeature,
+};
 use crate::io::create_virtual_keyboard;
 use crate::pipeline::Pipeline;
 use crate::state::Pending;
 use anyhow::{Result, bail};
+use crossbeam_channel::{select, unbounded};
 use evdev::Device as EvDevDevice;
 use evdev::{EventType, InputEvent, KeyCode};
-use crossbeam_channel::{unbounded, Receiver, select};
 use log::{debug, info};
 use std::collections::HashSet;
 use udev::Enumerator;

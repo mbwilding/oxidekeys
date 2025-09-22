@@ -1,5 +1,8 @@
-use crate::config::Layers;
-use crate::features::{Context, Feature, FeatureResult, KeyEvent, OutputEvent};
+use crate::{
+    config::Layers,
+    consts::*,
+    features::{Context, Feature, FeatureResult, KeyEvent, OutputEvent},
+};
 use anyhow::Result;
 use evdev::KeyCode;
 use std::collections::HashSet;
@@ -23,10 +26,10 @@ impl Feature for LayersFeature {
             if layer_def.contains_key(&event.key) {
                 is_layer_trigger = true;
                 match event.state {
-                    crate::consts::PRESS => {
+                    PRESS => {
                         ctx.active_layers.insert(layer_name.clone());
                     }
-                    crate::consts::RELEASE => {
+                    RELEASE => {
                         ctx.active_layers.remove(layer_name);
                     }
                     _ => {}
@@ -36,10 +39,10 @@ impl Feature for LayersFeature {
         }
         if is_layer_trigger {
             match event.state {
-                crate::consts::PRESS => {
+                PRESS => {
                     ctx.keys_down.insert(event.key);
                 }
-                crate::consts::RELEASE => {
+                RELEASE => {
                     ctx.keys_down.remove(&event.key);
                 }
                 _ => {}
@@ -53,8 +56,8 @@ impl Feature for LayersFeature {
             return Ok(FeatureResult::Continue(event));
         }
         match event.state {
-            crate::consts::PRESS => Ok(FeatureResult::Emit(vec![OutputEvent::PressMany(remapped)])),
-            crate::consts::RELEASE => Ok(FeatureResult::Emit(vec![OutputEvent::ReleaseMany(
+            PRESS => Ok(FeatureResult::Emit(vec![OutputEvent::PressMany(remapped)])),
+            RELEASE => Ok(FeatureResult::Emit(vec![OutputEvent::ReleaseMany(
                 remapped,
             )])),
             _ => Ok(FeatureResult::Consume),

@@ -44,11 +44,7 @@ pub trait Feature {
     fn name(&self) -> &'static str;
     fn on_event(&mut self, event: KeyEvent, ctx: &mut Context) -> Result<FeatureResult>;
 
-    fn on_timer(
-        &mut self,
-        _key: KeyCode,
-        _ctx: &mut Context,
-    ) -> Result<Option<Vec<OutputEvent>>> {
+    fn on_timer(&mut self, _key: KeyCode, _ctx: &mut Context) -> Result<Option<Vec<OutputEvent>>> {
         Ok(None)
     }
 }

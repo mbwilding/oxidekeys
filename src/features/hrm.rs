@@ -1,4 +1,8 @@
-use crate::features::{Context, Feature, FeatureResult, KeyEvent, OutputEvent};
+use crate::{
+    consts::*,
+    features::{Context, Feature, FeatureResult, KeyEvent, OutputEvent},
+    state::*,
+};
 use anyhow::Result;
 use crossbeam_channel::{Receiver, Sender, unbounded};
 use evdev::KeyCode;
@@ -40,7 +44,7 @@ impl Feature for HrmFeature {
     }
 
     fn on_event(&mut self, event: KeyEvent, ctx: &mut Context) -> Result<FeatureResult> {
-        if event.state == crate::consts::PRESS {
+        if event.state == PRESS {
             // For each remapped key that is HRM with hold, start timer
             if let Some(remap) = ctx.device_config.mappings.get(&event.key)
                 && remap.hrm == Some(true)
@@ -61,13 +65,13 @@ impl Feature for HrmFeature {
                         keys.clone(),
                     )]));
                 }
-                crate::state::add_pending(ctx.pending, event.key, remap);
+                add_pending(ctx.pending, event.key, remap);
             } else {
                 return Ok(FeatureResult::Continue(event));
             }
             Ok(FeatureResult::Consume)
-        } else if event.state == crate::consts::RELEASE {
-            if let Some(pending_key) = crate::state::remove_pending(ctx.pending, &event.key) {
+        } else if event.state == RELEASE {
+            if let Some(pending_key) = remove_pending(ctx.pending, &event.key) {
                 let remap = pending_key.remap;
                 let is_hrm = remap.hrm == Some(true);
                 if is_hrm {
@@ -82,11 +86,10 @@ impl Feature for HrmFeature {
                                 OutputEvent::ReleaseMany(tap),
                             ]));
                         }
-                    } else if let Some(hold) = remap.hold {
-                        if pending_key.hold_sent {
+                    } else if let Some(hold) = remap.hold
+                        && pending_key.hold_sent {
                             return Ok(FeatureResult::Emit(vec![OutputEvent::ReleaseMany(hold)]));
                         }
-                    }
                 } else if pending_key.overlap_hold_sent {
                     if let Some(hold) = remap.hold {
                         return Ok(FeatureResult::Emit(vec![OutputEvent::ReleaseMany(hold)]));
@@ -114,11 +117,7 @@ impl Feature for HrmFeature {
         }
     }
 
-    fn on_timer(
-        &mut self,
-        key: KeyCode,
-        ctx: &mut Context,
-    ) -> Result<Option<Vec<OutputEvent>>> {
+    fn on_timer(&mut self, key: KeyCode, ctx: &mut Context) -> Result<Option<Vec<OutputEvent>>> {
         if let Some(pending_key) = ctx.pending.get_mut(&key)
             && !pending_key.hold_sent
             && !pending_key.timer_fired

@@ -1,4 +1,7 @@
-use crate::features::{Context, Feature, FeatureResult, KeyEvent};
+use crate::{
+    consts::*,
+    features::{Context, Feature, FeatureResult, KeyEvent},
+};
 use anyhow::Result;
 
 pub struct OverlapsFeature;
@@ -15,7 +18,7 @@ impl Feature for OverlapsFeature {
     }
 
     fn on_event(&mut self, event: KeyEvent, ctx: &mut Context) -> Result<FeatureResult> {
-        if event.state == crate::consts::PRESS {
+        if event.state == PRESS {
             for (pending_key_code, pending_key) in ctx.pending.iter_mut() {
                 if pending_key.remap.hrm != Some(true)
                     && pending_key.remap.tap.is_some()
@@ -30,7 +33,7 @@ impl Feature for OverlapsFeature {
                 }
             }
             ctx.keys_down.insert(event.key);
-        } else if event.state == crate::consts::RELEASE {
+        } else if event.state == RELEASE {
             ctx.keys_down.remove(&event.key);
         }
         Ok(FeatureResult::Continue(event))
