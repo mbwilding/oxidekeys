@@ -1,8 +1,5 @@
 use crate::{
-    config::{Config, KeyboardConfig},
-    features::layers::LayersFeature,
-    io::create_virtual_keyboard,
-    pipeline::Pipeline,
+    config::{Config, KeyboardConfig}, consts::{IGNORE, PRESS}, features::layers::LayersFeature, io::create_virtual_keyboard, pipeline::Pipeline
 };
 use anyhow::{Result, bail};
 use crossbeam_channel::{select, unbounded};
@@ -115,6 +112,7 @@ pub(crate) fn keyboard_processor(keyboard: Keyboard, config: &Config) -> Result<
                 let event = match ev { Ok(e) => e, Err(_) => break };
                 if event.event_type() != EventType::KEY { continue; }
                 let state = event.value();
+                if state > PRESS { continue; }
                 let key = KeyCode(event.code());
                 pipeline.process_event(
                     &mut virt_keyboard,
