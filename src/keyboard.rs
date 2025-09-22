@@ -1,5 +1,9 @@
 use crate::{
-    config::{Config, KeyboardConfig}, consts::{IGNORE, PRESS}, features::layers::LayersFeature, io::create_virtual_keyboard, pipeline::Pipeline
+    config::{Config, KeyboardConfig},
+    consts::*,
+    features::layers::LayersFeature,
+    io::create_virtual_keyboard,
+    pipeline::Pipeline,
 };
 use anyhow::{Result, bail};
 use crossbeam_channel::{select, unbounded};
