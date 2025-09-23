@@ -60,7 +60,6 @@ impl Pipeline {
 
     #[allow(clippy::too_many_arguments)]
     pub fn process_timer_event(
-        // Process timer events
         &mut self,
         virt: &mut UInputDevice,
         config: &Config,
@@ -80,7 +79,7 @@ impl Pipeline {
         for feature in self.features.iter_mut() {
             if let Some(output_events) = feature.on_timer(key, &mut ctx)? {
                 emit(virt, output_events, ctx.no_emit, feature.name())?;
-                break; // Only the first feature that handles the timer should emit
+                break;
             }
         }
 
