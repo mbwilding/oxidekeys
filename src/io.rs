@@ -91,7 +91,7 @@ pub fn emit_passthrough(
     device.synchronize()?;
 
     debug!(
-        "{}{} {:?} [{}]",
+        "{}[{}] {:?} [{}]",
         if is_modifier(&key) { "    " } else { "" },
         if state == PRESS {
             "↓".green().bold()
