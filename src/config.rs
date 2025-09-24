@@ -42,7 +42,7 @@ fn default_no_emit() -> bool {
 }
 
 fn default_term() -> u16 {
-    144
+    250
 }
 
 fn default_mappings() -> Mappings {

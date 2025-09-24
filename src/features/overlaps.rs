@@ -99,7 +99,7 @@ impl Feature for OverlapsFeature {
 
         // If some overlap is active and not yet triggered, and we press another key,
         // trigger the hold and emit this key's press synthetically so we can swallow raw.
-        if event.state == 1
+        if event.state == PRESS
             && let Some((origin_key, active)) = self.active.iter_mut().find(|(_, a)| !a.triggered)
         {
             // Mark as triggered: hold stays down until origin_key is released
