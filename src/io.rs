@@ -1,6 +1,7 @@
 use crate::consts::*;
 use crate::features::OutputEvent;
 use anyhow::{Result, anyhow};
+use colored::Colorize;
 use evdev::KeyCode;
 use log::debug;
 use uinput::device::Device as UInputDevice;
@@ -26,24 +27,48 @@ pub fn emit(
 
     for event in &events {
         match event {
-            OutputEvent::Press(k) => {
-                device.write(EV_KEY, k.0 as i32, PRESS)?;
-                debug!("{:?} [PRESS] [{}]", k, feature_name);
+            OutputEvent::Press(key) => {
+                device.write(EV_KEY, key.0 as i32, PRESS)?;
+                debug!(
+                    "{}[{}] {:?} [{}]",
+                    if is_modifier(key) { "    " } else { "" },
+                    "↓".green().bold(),
+                    key,
+                    feature_name
+                );
             }
-            OutputEvent::Release(k) => {
-                device.write(EV_KEY, k.0 as i32, RELEASE)?;
-                debug!("{:?} [RELEASE] [{}]", k, feature_name);
+            OutputEvent::Release(key) => {
+                device.write(EV_KEY, key.0 as i32, RELEASE)?;
+                debug!(
+                    "{}[{}] {:?} [{}]",
+                    if is_modifier(key) { "    " } else { "" },
+                    "↑".red().bold(),
+                    key,
+                    feature_name.purple(),
+                );
             }
             OutputEvent::PressMany(keys) => {
-                for k in keys {
-                    device.write(EV_KEY, k.0 as i32, PRESS)?;
-                    debug!("{:?} [PRESS] [{}]", k, feature_name);
+                for key in keys {
+                    device.write(EV_KEY, key.0 as i32, PRESS)?;
+                    debug!(
+                        "{}[{}] {:?} [{}]",
+                        if is_modifier(key) { "    " } else { "" },
+                        "↓".green().bold(),
+                        key,
+                        feature_name.purple(),
+                    );
                 }
             }
             OutputEvent::ReleaseMany(keys) => {
-                for k in keys {
-                    device.write(EV_KEY, k.0 as i32, RELEASE)?;
-                    debug!("{:?} [RELEASE] [{}]", k, feature_name);
+                for key in keys {
+                    device.write(EV_KEY, key.0 as i32, RELEASE)?;
+                    debug!(
+                        "{}[{}] {:?} [{}]",
+                        if is_modifier(key) { "    " } else { "" },
+                        "↑".red().bold(),
+                        key,
+                        feature_name.purple(),
+                    );
                 }
             }
         }
@@ -61,12 +86,34 @@ pub fn emit_passthrough(
     if no_emit {
         return Ok(());
     }
+
     device.write(EV_KEY, key.0 as i32, state)?;
     device.synchronize()?;
+
     debug!(
-        "{:?} [{}] [raw]",
+        "{}{} {:?} [{}]",
+        if is_modifier(&key) { "    " } else { "" },
+        if state == PRESS {
+            "↓".green().bold()
+        } else {
+            "↑".red().bold()
+        },
         key,
-        if state == PRESS { "PRESS" } else { "RELEASE" }
+        "raw".purple(),
     );
     Ok(())
+}
+
+fn is_modifier(key: &KeyCode) -> bool {
+    matches!(
+        *key,
+        KeyCode::KEY_LEFTSHIFT
+            | KeyCode::KEY_RIGHTSHIFT
+            | KeyCode::KEY_LEFTCTRL
+            | KeyCode::KEY_RIGHTCTRL
+            | KeyCode::KEY_LEFTALT
+            | KeyCode::KEY_RIGHTALT
+            | KeyCode::KEY_LEFTMETA
+            | KeyCode::KEY_RIGHTMETA
+    )
 }
