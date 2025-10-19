@@ -135,6 +135,9 @@ fn default_mappings() -> Mappings {
         (
             KeyCode::KEY_BACKSPACE,
             RemapAction {
+                // NOTE: no-op
+                tap: Some(vec![KeyCode::KEY_RESERVED]),
+                overlap: Some(true),
                 ..Default::default()
             },
         ),
@@ -142,89 +145,123 @@ fn default_mappings() -> Mappings {
 }
 
 fn default_layers() -> Layers {
-    HashMap::from([
-        (
-            "Symbols & Navigation".into(),
-            HashMap::from([(
-                KeyCode::KEY_RIGHTALT,
-                HashMap::from([
-                    // Vim Arrows
-                    (KeyCode::KEY_J, vec![KeyCode::KEY_LEFT]),
-                    (KeyCode::KEY_C, vec![KeyCode::KEY_DOWN]),
-                    (KeyCode::KEY_V, vec![KeyCode::KEY_UP]),
-                    (KeyCode::KEY_P, vec![KeyCode::KEY_RIGHT]),
-                    // (
-                    (
-                        KeyCode::KEY_G,
-                        vec![KeyCode::KEY_RIGHTSHIFT, KeyCode::KEY_9],
-                    ),
-                    // )
-                    (
-                        KeyCode::KEY_H,
-                        vec![KeyCode::KEY_RIGHTSHIFT, KeyCode::KEY_0],
-                    ),
-                    // {
-                    (
-                        KeyCode::KEY_T,
-                        vec![KeyCode::KEY_RIGHTSHIFT, KeyCode::KEY_MINUS],
-                    ),
-                    // }
-                    (
-                        KeyCode::KEY_Y,
-                        vec![KeyCode::KEY_RIGHTSHIFT, KeyCode::KEY_EQUAL],
-                    ),
-                    // [
-                    (KeyCode::KEY_B, vec![KeyCode::KEY_MINUS]),
-                    // ]
-                    (KeyCode::KEY_N, vec![KeyCode::KEY_EQUAL]),
-                    // /
-                    (KeyCode::KEY_Z, vec![KeyCode::KEY_LEFTBRACE]),
-                    // \
-                    (KeyCode::KEY_SLASH, vec![KeyCode::KEY_BACKSLASH]),
-                    // // <
-                    // (
-                    //     KeyCode::KEY_A,
-                    //     vec![KeyCode::KEY_RIGHTSHIFT, KeyCode::KEY_W],
-                    // ),
-                    // // >
-                    // (
-                    //     KeyCode::KEY_SEMICOLON,
-                    //     vec![KeyCode::KEY_RIGHTSHIFT, KeyCode::KEY_E],
-                    // ),
-                    // `
-                    (KeyCode::KEY_Q, vec![KeyCode::KEY_GRAVE]),
-                    // !
-                    (KeyCode::KEY_W, vec![KeyCode::KEY_RIGHTSHIFT, KeyCode::KEY_1]),
-                    // ?
-                    (KeyCode::KEY_E, vec![KeyCode::KEY_RIGHTSHIFT, KeyCode::KEY_LEFTBRACE]),
-                    // @
-                    (KeyCode::KEY_R, vec![KeyCode::KEY_RIGHTSHIFT, KeyCode::KEY_2]),
-                    // =
-                    (KeyCode::KEY_A, vec![KeyCode::KEY_RIGHTBRACE]),
-                    // |
-                    (KeyCode::KEY_S, vec![KeyCode::KEY_RIGHTSHIFT, KeyCode::KEY_BACKSLASH]),
-                    // ^
-                    (KeyCode::KEY_D, vec![KeyCode::KEY_RIGHTSHIFT, KeyCode::KEY_6]),
-                    // _
-                    (KeyCode::KEY_F, vec![KeyCode::KEY_RIGHTSHIFT, KeyCode::KEY_APOSTROPHE]),
-                    // #
-                    (KeyCode::KEY_X, vec![KeyCode::KEY_RIGHTSHIFT, KeyCode::KEY_3]),
-                    // $
-                    (KeyCode::KEY_K, vec![KeyCode::KEY_RIGHTSHIFT, KeyCode::KEY_4]),
-                    // &
-                    (KeyCode::KEY_L, vec![KeyCode::KEY_RIGHTSHIFT, KeyCode::KEY_7]),
-                    // -
-                    (KeyCode::KEY_SEMICOLON, vec![KeyCode::KEY_APOSTROPHE]),
-                    // +
-                    (KeyCode::KEY_M, vec![KeyCode::KEY_RIGHTSHIFT, KeyCode::KEY_RIGHTBRACE]),
-                    // %
-                    (KeyCode::KEY_COMMA, vec![KeyCode::KEY_RIGHTSHIFT, KeyCode::KEY_5]),
-                    // *
-                    (KeyCode::KEY_DOT, vec![KeyCode::KEY_RIGHTSHIFT, KeyCode::KEY_8]),
-                ]),
-            )]),
-        ),
-    ])
+    HashMap::from([(
+        "Symbols & Navigation".into(),
+        HashMap::from([(
+            KeyCode::KEY_RIGHTALT,
+            HashMap::from([
+                // Vim Arrows
+                (KeyCode::KEY_J, vec![KeyCode::KEY_LEFT]),
+                (KeyCode::KEY_C, vec![KeyCode::KEY_DOWN]),
+                (KeyCode::KEY_V, vec![KeyCode::KEY_UP]),
+                (KeyCode::KEY_P, vec![KeyCode::KEY_RIGHT]),
+                // (
+                (
+                    KeyCode::KEY_G,
+                    vec![KeyCode::KEY_RIGHTSHIFT, KeyCode::KEY_9],
+                ),
+                // )
+                (
+                    KeyCode::KEY_H,
+                    vec![KeyCode::KEY_RIGHTSHIFT, KeyCode::KEY_0],
+                ),
+                // {
+                (
+                    KeyCode::KEY_T,
+                    vec![KeyCode::KEY_RIGHTSHIFT, KeyCode::KEY_MINUS],
+                ),
+                // }
+                (
+                    KeyCode::KEY_Y,
+                    vec![KeyCode::KEY_RIGHTSHIFT, KeyCode::KEY_EQUAL],
+                ),
+                // [
+                (KeyCode::KEY_B, vec![KeyCode::KEY_MINUS]),
+                // ]
+                (KeyCode::KEY_N, vec![KeyCode::KEY_EQUAL]),
+                // /
+                (KeyCode::KEY_Z, vec![KeyCode::KEY_LEFTBRACE]),
+                // \
+                (KeyCode::KEY_SLASH, vec![KeyCode::KEY_BACKSLASH]),
+                // // <
+                // (
+                //     KeyCode::KEY_A,
+                //     vec![KeyCode::KEY_RIGHTSHIFT, KeyCode::KEY_W],
+                // ),
+                // // >
+                // (
+                //     KeyCode::KEY_SEMICOLON,
+                //     vec![KeyCode::KEY_RIGHTSHIFT, KeyCode::KEY_E],
+                // ),
+                // `
+                (KeyCode::KEY_Q, vec![KeyCode::KEY_GRAVE]),
+                // !
+                (
+                    KeyCode::KEY_W,
+                    vec![KeyCode::KEY_RIGHTSHIFT, KeyCode::KEY_1],
+                ),
+                // ?
+                (
+                    KeyCode::KEY_E,
+                    vec![KeyCode::KEY_RIGHTSHIFT, KeyCode::KEY_LEFTBRACE],
+                ),
+                // @
+                (
+                    KeyCode::KEY_R,
+                    vec![KeyCode::KEY_RIGHTSHIFT, KeyCode::KEY_2],
+                ),
+                // =
+                (KeyCode::KEY_A, vec![KeyCode::KEY_RIGHTBRACE]),
+                // |
+                (
+                    KeyCode::KEY_S,
+                    vec![KeyCode::KEY_RIGHTSHIFT, KeyCode::KEY_BACKSLASH],
+                ),
+                // ^
+                (
+                    KeyCode::KEY_D,
+                    vec![KeyCode::KEY_RIGHTSHIFT, KeyCode::KEY_6],
+                ),
+                // _
+                (
+                    KeyCode::KEY_F,
+                    vec![KeyCode::KEY_RIGHTSHIFT, KeyCode::KEY_APOSTROPHE],
+                ),
+                // #
+                (
+                    KeyCode::KEY_X,
+                    vec![KeyCode::KEY_RIGHTSHIFT, KeyCode::KEY_3],
+                ),
+                // $
+                (
+                    KeyCode::KEY_K,
+                    vec![KeyCode::KEY_RIGHTSHIFT, KeyCode::KEY_4],
+                ),
+                // &
+                (
+                    KeyCode::KEY_L,
+                    vec![KeyCode::KEY_RIGHTSHIFT, KeyCode::KEY_7],
+                ),
+                // -
+                (KeyCode::KEY_SEMICOLON, vec![KeyCode::KEY_APOSTROPHE]),
+                // +
+                (
+                    KeyCode::KEY_M,
+                    vec![KeyCode::KEY_RIGHTSHIFT, KeyCode::KEY_RIGHTBRACE],
+                ),
+                // %
+                (
+                    KeyCode::KEY_COMMA,
+                    vec![KeyCode::KEY_RIGHTSHIFT, KeyCode::KEY_5],
+                ),
+                // *
+                (
+                    KeyCode::KEY_DOT,
+                    vec![KeyCode::KEY_RIGHTSHIFT, KeyCode::KEY_8],
+                ),
+            ]),
+        )]),
+    )])
 }
 
 fn default_keyboards() -> Keyboards {

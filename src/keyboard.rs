@@ -126,6 +126,7 @@ pub(crate) fn keyboard_processor(keyboard: Keyboard, config: &Config) -> Result<
                 let state = event.value();
                 if state > PRESS { continue; }
                 let key = KeyCode(event.code());
+
                 pipeline.process_event(
                     &mut virt_keyboard,
                     config,
@@ -138,6 +139,7 @@ pub(crate) fn keyboard_processor(keyboard: Keyboard, config: &Config) -> Result<
             }
             recv(timer_rx) -> timer_key => {
                 let key = match timer_key { Ok(k) => k, Err(_) => break };
+
                 pipeline.process_timer_event(
                     &mut virt_keyboard,
                     config,

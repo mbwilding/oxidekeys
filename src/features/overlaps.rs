@@ -36,7 +36,6 @@ impl Feature for OverlapsFeature {
     }
 
     fn on_event(&mut self, event: KeyEvent, ctx: &mut Context) -> Result<FeatureResult> {
-        // If this key's press/release was already emitted synthetically, swallow raw
         if self.swallowed.contains(&event.key) {
             match event.state {
                 // Swallow raw press (we already emitted it)

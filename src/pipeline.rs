@@ -46,6 +46,7 @@ impl Pipeline {
                 FeatureResult::Continue(e) => feature.on_event(e, &mut ctx)?,
                 _ => action,
             };
+
             if !matches!(action, FeatureResult::Continue(_)) {
                 break;
             }
