@@ -62,6 +62,8 @@ fn default_mappings() -> Mappings {
             KeyCode::KEY_LEFTSHIFT,
             RemapAction {
                 tap: Some(vec![KeyCode::KEY_ESC]),
+                hold: Some(vec![KeyCode::KEY_LEFTMETA]),
+                overlap: Some(true),
                 ..Default::default()
             },
         ),
@@ -70,63 +72,65 @@ fn default_mappings() -> Mappings {
             KeyCode::KEY_CAPSLOCK,
             RemapAction {
                 tap: Some(vec![KeyCode::KEY_BACKSPACE]),
-                ..Default::default()
-            },
-        ),
-        #[allow(clippy::needless_update)]
-        (
-            KeyCode::KEY_A,
-            RemapAction {
-                tap: Some(vec![KeyCode::KEY_A]),
                 hold: Some(vec![KeyCode::KEY_LEFTCTRL]),
+                overlap: Some(true),
                 ..Default::default()
             },
         ),
-        #[allow(clippy::needless_update)]
-        (
-            KeyCode::KEY_SEMICOLON,
-            RemapAction {
-                tap: Some(vec![KeyCode::KEY_SEMICOLON]),
-                hold: Some(vec![KeyCode::KEY_RIGHTCTRL]),
-                ..Default::default()
-            },
-        ),
-        #[allow(clippy::needless_update)]
-        (
-            KeyCode::KEY_S,
-            RemapAction {
-                tap: Some(vec![KeyCode::KEY_S]),
-                hold: Some(vec![KeyCode::KEY_LEFTMETA]),
-                ..Default::default()
-            },
-        ),
-        #[allow(clippy::needless_update)]
-        (
-            KeyCode::KEY_L,
-            RemapAction {
-                tap: Some(vec![KeyCode::KEY_L]),
-                hold: Some(vec![KeyCode::KEY_RIGHTMETA]),
-                ..Default::default()
-            },
-        ),
-        #[allow(clippy::needless_update)]
-        (
-            KeyCode::KEY_D,
-            RemapAction {
-                tap: Some(vec![KeyCode::KEY_D]),
-                hold: Some(vec![KeyCode::KEY_LEFTALT]),
-                ..Default::default()
-            },
-        ),
-        #[allow(clippy::needless_update)]
-        (
-            KeyCode::KEY_K,
-            RemapAction {
-                tap: Some(vec![KeyCode::KEY_K]),
-                hold: Some(vec![KeyCode::KEY_RIGHTALT]),
-                ..Default::default()
-            },
-        ),
+        // #[allow(clippy::needless_update)]
+        // (
+        //     KeyCode::KEY_A,
+        //     RemapAction {
+        //         tap: Some(vec![KeyCode::KEY_A]),
+        //         hold: Some(vec![KeyCode::KEY_LEFTCTRL]),
+        //         ..Default::default()
+        //     },
+        // ),
+        // #[allow(clippy::needless_update)]
+        // (
+        //     KeyCode::KEY_SEMICOLON,
+        //     RemapAction {
+        //         tap: Some(vec![KeyCode::KEY_SEMICOLON]),
+        //         hold: Some(vec![KeyCode::KEY_RIGHTCTRL]),
+        //         ..Default::default()
+        //     },
+        // ),
+        // #[allow(clippy::needless_update)]
+        // (
+        //     KeyCode::KEY_S,
+        //     RemapAction {
+        //         tap: Some(vec![KeyCode::KEY_S]),
+        //         hold: Some(vec![KeyCode::KEY_LEFTMETA]),
+        //         ..Default::default()
+        //     },
+        // ),
+        // #[allow(clippy::needless_update)]
+        // (
+        //     KeyCode::KEY_L,
+        //     RemapAction {
+        //         tap: Some(vec![KeyCode::KEY_L]),
+        //         hold: Some(vec![KeyCode::KEY_RIGHTMETA]),
+        //         ..Default::default()
+        //     },
+        // ),
+        // #[allow(clippy::needless_update)]
+        // (
+        //     KeyCode::KEY_D,
+        //     RemapAction {
+        //         tap: Some(vec![KeyCode::KEY_D]),
+        //         hold: Some(vec![KeyCode::KEY_LEFTALT]),
+        //         ..Default::default()
+        //     },
+        // ),
+        // #[allow(clippy::needless_update)]
+        // (
+        //     KeyCode::KEY_K,
+        //     RemapAction {
+        //         tap: Some(vec![KeyCode::KEY_K]),
+        //         hold: Some(vec![KeyCode::KEY_RIGHTALT]),
+        //         ..Default::default()
+        //     },
+        // ),
         #[allow(clippy::needless_update)]
         (
             KeyCode::KEY_BACKSPACE,
