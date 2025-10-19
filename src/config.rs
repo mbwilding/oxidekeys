@@ -140,7 +140,7 @@ fn default_mappings() -> Mappings {
 fn default_layers() -> Layers {
     HashMap::from([
         (
-            "Navigation".into(),
+            "Symbols & Navigation".into(),
             HashMap::from([(
                 KeyCode::KEY_RIGHTALT,
                 HashMap::from([
@@ -149,52 +149,74 @@ fn default_layers() -> Layers {
                     (KeyCode::KEY_C, vec![KeyCode::KEY_DOWN]),
                     (KeyCode::KEY_V, vec![KeyCode::KEY_UP]),
                     (KeyCode::KEY_P, vec![KeyCode::KEY_RIGHT]),
-                ]),
-            )]),
-        ),
-        (
-            "Symbols".into(),
-            HashMap::from([(
-                KeyCode::KEY_LEFTALT,
-                HashMap::from([
                     // (
                     (
-                        KeyCode::KEY_F,
+                        KeyCode::KEY_G,
                         vec![KeyCode::KEY_RIGHTSHIFT, KeyCode::KEY_9],
                     ),
                     // )
                     (
-                        KeyCode::KEY_J,
+                        KeyCode::KEY_H,
                         vec![KeyCode::KEY_RIGHTSHIFT, KeyCode::KEY_0],
                     ),
                     // {
                     (
-                        KeyCode::KEY_D,
+                        KeyCode::KEY_T,
                         vec![KeyCode::KEY_RIGHTSHIFT, KeyCode::KEY_MINUS],
                     ),
                     // }
                     (
-                        KeyCode::KEY_K,
+                        KeyCode::KEY_Y,
                         vec![KeyCode::KEY_RIGHTSHIFT, KeyCode::KEY_EQUAL],
                     ),
                     // [
-                    (KeyCode::KEY_S, vec![KeyCode::KEY_MINUS]),
+                    (KeyCode::KEY_B, vec![KeyCode::KEY_MINUS]),
                     // ]
-                    (KeyCode::KEY_L, vec![KeyCode::KEY_EQUAL]),
-                    // <
-                    (
-                        KeyCode::KEY_A,
-                        vec![KeyCode::KEY_RIGHTSHIFT, KeyCode::KEY_W],
-                    ),
-                    // >
-                    (
-                        KeyCode::KEY_SEMICOLON,
-                        vec![KeyCode::KEY_RIGHTSHIFT, KeyCode::KEY_E],
-                    ),
+                    (KeyCode::KEY_N, vec![KeyCode::KEY_EQUAL]),
                     // /
-                    (KeyCode::KEY_G, vec![KeyCode::KEY_LEFTBRACE]),
+                    (KeyCode::KEY_Z, vec![KeyCode::KEY_LEFTBRACE]),
                     // \
-                    (KeyCode::KEY_H, vec![KeyCode::KEY_BACKSLASH]),
+                    (KeyCode::KEY_SLASH, vec![KeyCode::KEY_BACKSLASH]),
+                    // // <
+                    // (
+                    //     KeyCode::KEY_A,
+                    //     vec![KeyCode::KEY_RIGHTSHIFT, KeyCode::KEY_W],
+                    // ),
+                    // // >
+                    // (
+                    //     KeyCode::KEY_SEMICOLON,
+                    //     vec![KeyCode::KEY_RIGHTSHIFT, KeyCode::KEY_E],
+                    // ),
+                    // `
+                    (KeyCode::KEY_Q, vec![KeyCode::KEY_GRAVE]),
+                    // !
+                    (KeyCode::KEY_W, vec![KeyCode::KEY_RIGHTSHIFT, KeyCode::KEY_1]),
+                    // ?
+                    (KeyCode::KEY_E, vec![KeyCode::KEY_RIGHTSHIFT, KeyCode::KEY_SLASH]),
+                    // @
+                    (KeyCode::KEY_R, vec![KeyCode::KEY_RIGHTSHIFT, KeyCode::KEY_2]),
+                    // =
+                    (KeyCode::KEY_A, vec![KeyCode::KEY_RIGHTBRACE]),
+                    // |
+                    (KeyCode::KEY_S, vec![KeyCode::KEY_RIGHTSHIFT, KeyCode::KEY_BACKSLASH]),
+                    // ^
+                    (KeyCode::KEY_D, vec![KeyCode::KEY_RIGHTSHIFT, KeyCode::KEY_6]),
+                    // _
+                    (KeyCode::KEY_F, vec![KeyCode::KEY_RIGHTSHIFT, KeyCode::KEY_APOSTROPHE]),
+                    // #
+                    (KeyCode::KEY_X, vec![KeyCode::KEY_RIGHTSHIFT, KeyCode::KEY_3]),
+                    // $
+                    (KeyCode::KEY_K, vec![KeyCode::KEY_RIGHTSHIFT, KeyCode::KEY_4]),
+                    // &
+                    (KeyCode::KEY_L, vec![KeyCode::KEY_RIGHTSHIFT, KeyCode::KEY_7]),
+                    // -
+                    (KeyCode::KEY_SEMICOLON, vec![KeyCode::KEY_RIGHTSHIFT, KeyCode::KEY_APOSTROPHE]),
+                    // +
+                    (KeyCode::KEY_M, vec![KeyCode::KEY_RIGHTSHIFT, KeyCode::KEY_EQUAL]),
+                    // %
+                    (KeyCode::KEY_COMMA, vec![KeyCode::KEY_RIGHTSHIFT, KeyCode::KEY_5]),
+                    // *
+                    (KeyCode::KEY_DOT, vec![KeyCode::KEY_RIGHTSHIFT, KeyCode::KEY_8]),
                 ]),
             )]),
         ),
@@ -214,7 +236,7 @@ fn default_keyboards() -> Keyboards {
 fn default_features() -> Features {
     HashMap::from([
         ("overlaps".to_owned(), true),
-        ("terms".to_owned(), true),
+        ("terms".to_owned(), false),
         ("layers".to_owned(), true),
     ])
 }
