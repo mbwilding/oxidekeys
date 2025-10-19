@@ -192,7 +192,7 @@ fn default_layers() -> Layers {
                     // !
                     (KeyCode::KEY_W, vec![KeyCode::KEY_RIGHTSHIFT, KeyCode::KEY_1]),
                     // ?
-                    (KeyCode::KEY_E, vec![KeyCode::KEY_RIGHTSHIFT, KeyCode::KEY_SLASH]),
+                    (KeyCode::KEY_E, vec![KeyCode::KEY_RIGHTSHIFT, KeyCode::KEY_LEFTBRACE]),
                     // @
                     (KeyCode::KEY_R, vec![KeyCode::KEY_RIGHTSHIFT, KeyCode::KEY_2]),
                     // =
@@ -210,9 +210,9 @@ fn default_layers() -> Layers {
                     // &
                     (KeyCode::KEY_L, vec![KeyCode::KEY_RIGHTSHIFT, KeyCode::KEY_7]),
                     // -
-                    (KeyCode::KEY_SEMICOLON, vec![KeyCode::KEY_RIGHTSHIFT, KeyCode::KEY_APOSTROPHE]),
+                    (KeyCode::KEY_SEMICOLON, vec![KeyCode::KEY_APOSTROPHE]),
                     // +
-                    (KeyCode::KEY_M, vec![KeyCode::KEY_RIGHTSHIFT, KeyCode::KEY_EQUAL]),
+                    (KeyCode::KEY_M, vec![KeyCode::KEY_RIGHTSHIFT, KeyCode::KEY_RIGHTBRACE]),
                     // %
                     (KeyCode::KEY_COMMA, vec![KeyCode::KEY_RIGHTSHIFT, KeyCode::KEY_5]),
                     // *
