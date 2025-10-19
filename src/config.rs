@@ -79,60 +79,6 @@ fn default_mappings() -> Mappings {
                 ..Default::default()
             },
         ),
-        // #[allow(clippy::needless_update)]
-        // (
-        //     KeyCode::KEY_A,
-        //     RemapAction {
-        //         tap: Some(vec![KeyCode::KEY_A]),
-        //         hold: Some(vec![KeyCode::KEY_LEFTCTRL]),
-        //         ..Default::default()
-        //     },
-        // ),
-        // #[allow(clippy::needless_update)]
-        // (
-        //     KeyCode::KEY_SEMICOLON,
-        //     RemapAction {
-        //         tap: Some(vec![KeyCode::KEY_SEMICOLON]),
-        //         hold: Some(vec![KeyCode::KEY_RIGHTCTRL]),
-        //         ..Default::default()
-        //     },
-        // ),
-        // #[allow(clippy::needless_update)]
-        // (
-        //     KeyCode::KEY_S,
-        //     RemapAction {
-        //         tap: Some(vec![KeyCode::KEY_S]),
-        //         hold: Some(vec![KeyCode::KEY_LEFTMETA]),
-        //         ..Default::default()
-        //     },
-        // ),
-        // #[allow(clippy::needless_update)]
-        // (
-        //     KeyCode::KEY_L,
-        //     RemapAction {
-        //         tap: Some(vec![KeyCode::KEY_L]),
-        //         hold: Some(vec![KeyCode::KEY_RIGHTMETA]),
-        //         ..Default::default()
-        //     },
-        // ),
-        // #[allow(clippy::needless_update)]
-        // (
-        //     KeyCode::KEY_D,
-        //     RemapAction {
-        //         tap: Some(vec![KeyCode::KEY_D]),
-        //         hold: Some(vec![KeyCode::KEY_LEFTALT]),
-        //         ..Default::default()
-        //     },
-        // ),
-        // #[allow(clippy::needless_update)]
-        // (
-        //     KeyCode::KEY_K,
-        //     RemapAction {
-        //         tap: Some(vec![KeyCode::KEY_K]),
-        //         hold: Some(vec![KeyCode::KEY_RIGHTALT]),
-        //         ..Default::default()
-        //     },
-        // ),
         #[allow(clippy::needless_update)]
         (
             KeyCode::KEY_BACKSPACE,
@@ -170,31 +116,21 @@ fn default_layers() -> Layers {
                 // {
                 (
                     KeyCode::KEY_Y,
-                    vec![KeyCode::KEY_RIGHTSHIFT, KeyCode::KEY_MINUS],
+                    vec![KeyCode::KEY_RIGHTSHIFT, KeyCode::KEY_LEFTBRACE],
                 ),
                 // }
                 (
                     KeyCode::KEY_F,
-                    vec![KeyCode::KEY_RIGHTSHIFT, KeyCode::KEY_EQUAL],
+                    vec![KeyCode::KEY_RIGHTSHIFT, KeyCode::KEY_RIGHTBRACE],
                 ),
                 // [
-                (KeyCode::KEY_X, vec![KeyCode::KEY_MINUS]),
+                (KeyCode::KEY_X, vec![KeyCode::KEY_LEFTBRACE]),
                 // ]
-                (KeyCode::KEY_B, vec![KeyCode::KEY_EQUAL]),
+                (KeyCode::KEY_B, vec![KeyCode::KEY_RIGHTBRACE]),
                 // /
-                (KeyCode::KEY_SEMICOLON, vec![KeyCode::KEY_LEFTBRACE]),
+                (KeyCode::KEY_SEMICOLON, vec![KeyCode::KEY_SLASH]),
                 // \
                 (KeyCode::KEY_Z, vec![KeyCode::KEY_BACKSLASH]),
-                // // <
-                // (
-                //     KeyCode::KEY_A,
-                //     vec![KeyCode::KEY_RIGHTSHIFT, KeyCode::KEY_W],
-                // ),
-                // // >
-                // (
-                //     KeyCode::KEY_S,
-                //     vec![KeyCode::KEY_RIGHTSHIFT, KeyCode::KEY_E],
-                // ),
                 // `
                 (KeyCode::KEY_APOSTROPHE, vec![KeyCode::KEY_GRAVE]),
                 // !
@@ -205,7 +141,7 @@ fn default_layers() -> Layers {
                 // ?
                 (
                     KeyCode::KEY_DOT,
-                    vec![KeyCode::KEY_RIGHTSHIFT, KeyCode::KEY_LEFTBRACE],
+                    vec![KeyCode::KEY_RIGHTSHIFT, KeyCode::KEY_SLASH],
                 ),
                 // @
                 (
@@ -213,7 +149,7 @@ fn default_layers() -> Layers {
                     vec![KeyCode::KEY_RIGHTSHIFT, KeyCode::KEY_2],
                 ),
                 // =
-                (KeyCode::KEY_A, vec![KeyCode::KEY_RIGHTBRACE]),
+                (KeyCode::KEY_A, vec![KeyCode::KEY_EQUAL]),
                 // |
                 (
                     KeyCode::KEY_O,
@@ -227,7 +163,7 @@ fn default_layers() -> Layers {
                 // _
                 (
                     KeyCode::KEY_U,
-                    vec![KeyCode::KEY_RIGHTSHIFT, KeyCode::KEY_APOSTROPHE],
+                    vec![KeyCode::KEY_RIGHTSHIFT, KeyCode::KEY_MINUS],
                 ),
                 // #
                 (
@@ -245,11 +181,11 @@ fn default_layers() -> Layers {
                     vec![KeyCode::KEY_RIGHTSHIFT, KeyCode::KEY_7],
                 ),
                 // -
-                (KeyCode::KEY_S, vec![KeyCode::KEY_APOSTROPHE]),
+                (KeyCode::KEY_S, vec![KeyCode::KEY_MINUS]),
                 // +
                 (
                     KeyCode::KEY_M,
-                    vec![KeyCode::KEY_RIGHTSHIFT, KeyCode::KEY_RIGHTBRACE],
+                    vec![KeyCode::KEY_RIGHTSHIFT, KeyCode::KEY_EQUAL],
                 ),
                 // %
                 (

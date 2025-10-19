@@ -2,6 +2,7 @@ use crate::{
     config::Layers,
     consts::*,
     features::{Context, Feature, FeatureResult, KeyEvent, OutputEvent},
+    layouts::Layout,
 };
 use anyhow::Result;
 use evdev::KeyCode;
@@ -52,9 +53,14 @@ impl Feature for LayersFeature {
             return Ok(FeatureResult::Consume);
         }
 
-        let remapped =
-            resolve_layered_keys(event.key, ctx.active_layers, &ctx.device_config.layers);
-        if remapped.len() == 1 && remapped[0] == event.key {
+        let remapped = resolve_layered_keys(
+            event.key,
+            ctx.active_layers,
+            &ctx.device_config.layers,
+            &ctx.device_config.layout,
+        );
+
+        if remapped.len() == 1 && remapped[0] == ctx.device_config.layout.resolve_reverse(&event.key) {
             return Ok(FeatureResult::Continue(event));
         }
 
@@ -72,12 +78,18 @@ fn resolve_layered_keys(
     key: KeyCode,
     active_layers: &HashSet<String>,
     layers: &Layers,
+    layout: &Layout,
 ) -> Vec<KeyCode> {
     for layer in active_layers {
         if let Some(layer_map) = layers.get(layer) {
             for mapping in layer_map.values() {
                 if let Some(remapped) = mapping.get(&key) {
-                    return remapped.clone();
+                    let mut keys_reversed: Vec<KeyCode> = Vec::with_capacity(remapped.len());
+                    for key in remapped {
+                        let key_reversed = layout.resolve_reverse(key);
+                        keys_reversed.push(key_reversed);
+                    }
+                    return keys_reversed;
                 }
             }
         }

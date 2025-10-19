@@ -6,15 +6,11 @@ mod dvorak;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
+#[derive(Default)]
 pub enum Layout {
+    #[default]
     Dvorak,
     Qwerty,
-}
-
-impl Default for Layout {
-    fn default() -> Self {
-        Layout::Dvorak
-    }
 }
 
 impl FromStr for Layout {
@@ -26,16 +22,6 @@ impl FromStr for Layout {
             "qwerty" => Ok(Layout::Qwerty),
             _ => Err(format!("invalid layout: {}", s)),
         }
-    }
-}
-
-impl ToString for Layout {
-    fn to_string(&self) -> String {
-        match self {
-            Layout::Dvorak => "dvorak",
-            Layout::Qwerty => "qwerty",
-        }
-        .to_string()
     }
 }
 
