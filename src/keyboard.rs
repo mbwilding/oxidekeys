@@ -126,6 +126,7 @@ pub(crate) fn keyboard_processor(keyboard: Keyboard, config: &Config) -> Result<
                 let state = event.value();
                 if state > PRESS { continue; }
                 let key = KeyCode(event.code());
+                let key_resolved = kb_config.layout.resolve(&key);
 
                 pipeline.process_event(
                     &mut virt_keyboard,
@@ -133,12 +134,13 @@ pub(crate) fn keyboard_processor(keyboard: Keyboard, config: &Config) -> Result<
                     &kb_config,
                     &mut keys_down,
                     &mut active_layers,
-                    key,
+                    key_resolved,
                     state,
                 )?;
             }
             recv(timer_rx) -> timer_key => {
                 let key = match timer_key { Ok(k) => k, Err(_) => break };
+                let key_resolved = kb_config.layout.resolve(&key);
 
                 pipeline.process_timer_event(
                     &mut virt_keyboard,
@@ -146,7 +148,7 @@ pub(crate) fn keyboard_processor(keyboard: Keyboard, config: &Config) -> Result<
                     &kb_config,
                     &mut keys_down,
                     &mut active_layers,
-                    key,
+                    key_resolved,
                 )?;
             }
         }

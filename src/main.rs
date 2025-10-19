@@ -3,6 +3,7 @@ mod consts;
 mod features;
 mod io;
 mod keyboard;
+mod layouts;
 mod pipeline;
 
 use crate::{
@@ -18,7 +19,7 @@ fn main() -> Result<()> {
     let keyboards = open_keyboard_devices(&config)?;
 
     if keyboards.len() > 1 {
-        if let Some(keyboard) = keyboards.into_iter().nth(0) {
+        if let Some(keyboard) = keyboards.into_iter().next() {
             if let Err(e) = keyboard_processor(keyboard, &config) {
                 eprintln!("Error processing keyboard: {}", e);
                 return Err(e);

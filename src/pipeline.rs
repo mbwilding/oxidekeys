@@ -53,8 +53,8 @@ impl Pipeline {
         }
 
         match action {
-            FeatureResult::Continue(e) => emit_passthrough(virt, e.key, e.state, ctx.no_emit),
-            FeatureResult::Emit(out) => emit(virt, out, ctx.no_emit, feature_name),
+            FeatureResult::Continue(e) => emit_passthrough(ctx, virt, e.key, e.state),
+            FeatureResult::Emit(out) => emit(ctx, virt, out, feature_name),
             FeatureResult::Consume => Ok(()),
         }
     }
@@ -79,7 +79,7 @@ impl Pipeline {
 
         for feature in self.features.iter_mut() {
             if let Some(output_events) = feature.on_timer(key, &mut ctx)? {
-                emit(virt, output_events, ctx.no_emit, feature.name())?;
+                emit(ctx, virt, output_events, feature.name())?;
                 break;
             }
         }

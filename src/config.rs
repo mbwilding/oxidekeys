@@ -6,6 +6,8 @@ use std::collections::HashMap;
 use std::path::PathBuf;
 use std::{env, fs};
 
+use crate::layouts::Layout;
+
 pub(crate) fn config() -> Result<Config> {
     let config_path = match env::args().nth(1) {
         Some(arg_path) => PathBuf::from(arg_path),
@@ -151,38 +153,38 @@ fn default_layers() -> Layers {
             KeyCode::KEY_RIGHTALT,
             HashMap::from([
                 // Vim Arrows
-                (KeyCode::KEY_J, vec![KeyCode::KEY_LEFT]),
-                (KeyCode::KEY_C, vec![KeyCode::KEY_DOWN]),
-                (KeyCode::KEY_V, vec![KeyCode::KEY_UP]),
-                (KeyCode::KEY_P, vec![KeyCode::KEY_RIGHT]),
+                (KeyCode::KEY_H, vec![KeyCode::KEY_LEFT]),
+                (KeyCode::KEY_J, vec![KeyCode::KEY_DOWN]),
+                (KeyCode::KEY_K, vec![KeyCode::KEY_UP]),
+                (KeyCode::KEY_L, vec![KeyCode::KEY_RIGHT]),
                 // (
                 (
-                    KeyCode::KEY_G,
+                    KeyCode::KEY_I,
                     vec![KeyCode::KEY_RIGHTSHIFT, KeyCode::KEY_9],
                 ),
                 // )
                 (
-                    KeyCode::KEY_H,
+                    KeyCode::KEY_D,
                     vec![KeyCode::KEY_RIGHTSHIFT, KeyCode::KEY_0],
                 ),
                 // {
                 (
-                    KeyCode::KEY_T,
+                    KeyCode::KEY_Y,
                     vec![KeyCode::KEY_RIGHTSHIFT, KeyCode::KEY_MINUS],
                 ),
                 // }
                 (
-                    KeyCode::KEY_Y,
+                    KeyCode::KEY_F,
                     vec![KeyCode::KEY_RIGHTSHIFT, KeyCode::KEY_EQUAL],
                 ),
                 // [
-                (KeyCode::KEY_B, vec![KeyCode::KEY_MINUS]),
+                (KeyCode::KEY_X, vec![KeyCode::KEY_MINUS]),
                 // ]
-                (KeyCode::KEY_N, vec![KeyCode::KEY_EQUAL]),
+                (KeyCode::KEY_B, vec![KeyCode::KEY_EQUAL]),
                 // /
-                (KeyCode::KEY_Z, vec![KeyCode::KEY_LEFTBRACE]),
+                (KeyCode::KEY_SEMICOLON, vec![KeyCode::KEY_LEFTBRACE]),
                 // \
-                (KeyCode::KEY_SLASH, vec![KeyCode::KEY_BACKSLASH]),
+                (KeyCode::KEY_Z, vec![KeyCode::KEY_BACKSLASH]),
                 // // <
                 // (
                 //     KeyCode::KEY_A,
@@ -190,60 +192,60 @@ fn default_layers() -> Layers {
                 // ),
                 // // >
                 // (
-                //     KeyCode::KEY_SEMICOLON,
+                //     KeyCode::KEY_S,
                 //     vec![KeyCode::KEY_RIGHTSHIFT, KeyCode::KEY_E],
                 // ),
                 // `
-                (KeyCode::KEY_Q, vec![KeyCode::KEY_GRAVE]),
+                (KeyCode::KEY_APOSTROPHE, vec![KeyCode::KEY_GRAVE]),
                 // !
                 (
-                    KeyCode::KEY_W,
+                    KeyCode::KEY_COMMA,
                     vec![KeyCode::KEY_RIGHTSHIFT, KeyCode::KEY_1],
                 ),
                 // ?
                 (
-                    KeyCode::KEY_E,
+                    KeyCode::KEY_DOT,
                     vec![KeyCode::KEY_RIGHTSHIFT, KeyCode::KEY_LEFTBRACE],
                 ),
                 // @
                 (
-                    KeyCode::KEY_R,
+                    KeyCode::KEY_P,
                     vec![KeyCode::KEY_RIGHTSHIFT, KeyCode::KEY_2],
                 ),
                 // =
                 (KeyCode::KEY_A, vec![KeyCode::KEY_RIGHTBRACE]),
                 // |
                 (
-                    KeyCode::KEY_S,
+                    KeyCode::KEY_O,
                     vec![KeyCode::KEY_RIGHTSHIFT, KeyCode::KEY_BACKSLASH],
                 ),
                 // ^
                 (
-                    KeyCode::KEY_D,
+                    KeyCode::KEY_E,
                     vec![KeyCode::KEY_RIGHTSHIFT, KeyCode::KEY_6],
                 ),
                 // _
                 (
-                    KeyCode::KEY_F,
+                    KeyCode::KEY_U,
                     vec![KeyCode::KEY_RIGHTSHIFT, KeyCode::KEY_APOSTROPHE],
                 ),
                 // #
                 (
-                    KeyCode::KEY_X,
+                    KeyCode::KEY_Q,
                     vec![KeyCode::KEY_RIGHTSHIFT, KeyCode::KEY_3],
                 ),
                 // $
                 (
-                    KeyCode::KEY_K,
+                    KeyCode::KEY_T,
                     vec![KeyCode::KEY_RIGHTSHIFT, KeyCode::KEY_4],
                 ),
                 // &
                 (
-                    KeyCode::KEY_L,
+                    KeyCode::KEY_N,
                     vec![KeyCode::KEY_RIGHTSHIFT, KeyCode::KEY_7],
                 ),
                 // -
-                (KeyCode::KEY_SEMICOLON, vec![KeyCode::KEY_APOSTROPHE]),
+                (KeyCode::KEY_S, vec![KeyCode::KEY_APOSTROPHE]),
                 // +
                 (
                     KeyCode::KEY_M,
@@ -251,12 +253,12 @@ fn default_layers() -> Layers {
                 ),
                 // %
                 (
-                    KeyCode::KEY_COMMA,
+                    KeyCode::KEY_W,
                     vec![KeyCode::KEY_RIGHTSHIFT, KeyCode::KEY_5],
                 ),
                 // *
                 (
-                    KeyCode::KEY_DOT,
+                    KeyCode::KEY_V,
                     vec![KeyCode::KEY_RIGHTSHIFT, KeyCode::KEY_8],
                 ),
             ]),
@@ -268,6 +270,7 @@ fn default_keyboards() -> Keyboards {
     HashMap::from([(
         "AT Translated Set 2 keyboard".to_owned(),
         KeyboardConfig {
+            layout: Layout::default(),
             mappings: default_mappings(),
             layers: default_layers(),
         },
@@ -301,6 +304,7 @@ pub(crate) struct Globals {
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub(crate) struct KeyboardConfig {
+    pub layout: Layout,
     #[serde(default = "default_mappings")]
     pub mappings: Mappings,
     #[serde(default = "default_layers")]

@@ -1,5 +1,5 @@
 use crate::consts::*;
-use crate::features::OutputEvent;
+use crate::features::{Context, OutputEvent};
 use anyhow::{Result, anyhow};
 use colored::Colorize;
 use evdev::KeyCode;
@@ -16,19 +16,20 @@ pub fn create_virtual_keyboard(name: &str) -> Result<UInputDevice> {
 }
 
 pub fn emit(
+    ctx: Context,
     device: &mut UInputDevice,
     events: Vec<OutputEvent>,
-    no_emit: bool,
     feature_name: &'static str,
 ) -> Result<()> {
-    if no_emit {
+    if ctx.no_emit {
         return Ok(());
     }
 
     for event in &events {
         match event {
             OutputEvent::Press(key) => {
-                device.write(EV_KEY, key.0 as i32, PRESS)?;
+                let key_reversed = ctx.device_config.layout.resolve_reverse(key);
+                device.write(EV_KEY, key_reversed.0 as i32, PRESS)?;
                 debug!(
                     "{}[{}] {:?} [{}]",
                     if is_modifier(key) { "    " } else { "" },
@@ -38,7 +39,8 @@ pub fn emit(
                 );
             }
             OutputEvent::Release(key) => {
-                device.write(EV_KEY, key.0 as i32, RELEASE)?;
+                let key_reversed = ctx.device_config.layout.resolve_reverse(key);
+                device.write(EV_KEY, key_reversed.0 as i32, RELEASE)?;
                 debug!(
                     "{}[{}] {:?} [{}]",
                     if is_modifier(key) { "    " } else { "" },
@@ -49,7 +51,8 @@ pub fn emit(
             }
             OutputEvent::PressMany(keys) => {
                 for key in keys {
-                    device.write(EV_KEY, key.0 as i32, PRESS)?;
+                    let key_reversed = ctx.device_config.layout.resolve_reverse(key);
+                    device.write(EV_KEY, key_reversed.0 as i32, PRESS)?;
                     debug!(
                         "{}[{}] {:?} [{}]",
                         if is_modifier(key) { "    " } else { "" },
@@ -61,7 +64,8 @@ pub fn emit(
             }
             OutputEvent::ReleaseMany(keys) => {
                 for key in keys {
-                    device.write(EV_KEY, key.0 as i32, RELEASE)?;
+                    let key_reversed = ctx.device_config.layout.resolve_reverse(key);
+                    device.write(EV_KEY, key_reversed.0 as i32, RELEASE)?;
                     debug!(
                         "{}[{}] {:?} [{}]",
                         if is_modifier(key) { "    " } else { "" },
@@ -78,16 +82,18 @@ pub fn emit(
 }
 
 pub fn emit_passthrough(
+    ctx: Context,
     device: &mut UInputDevice,
     key: KeyCode,
     state: i32,
-    no_emit: bool,
 ) -> Result<()> {
-    if no_emit {
+    if ctx.no_emit {
         return Ok(());
     }
 
-    device.write(EV_KEY, key.0 as i32, state)?;
+    let key_reversed = ctx.device_config.layout.resolve_reverse(&key);
+
+    device.write(EV_KEY, key_reversed.0 as i32, state)?;
     device.synchronize()?;
 
     debug!(
