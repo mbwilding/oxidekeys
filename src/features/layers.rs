@@ -6,6 +6,7 @@ use crate::{
 };
 use anyhow::Result;
 use evdev::KeyCode;
+use log::debug;
 use std::collections::HashSet;
 
 pub struct LayersFeature;
@@ -63,6 +64,8 @@ impl Feature for LayersFeature {
         if remapped.len() == 1 && remapped[0] == ctx.device_config.layout.resolve_reverse(&event.key) {
             return Ok(FeatureResult::Continue(event));
         }
+
+        debug!("{:#?}", &remapped);
 
         match event.state {
             PRESS => Ok(FeatureResult::Emit(vec![OutputEvent::PressMany(remapped)])),

@@ -77,7 +77,9 @@ pub fn emit(
             }
         }
     }
+
     device.synchronize()?;
+
     Ok(())
 }
 
@@ -107,6 +109,7 @@ pub fn emit_passthrough(
         key,
         "raw".purple(),
     );
+
     Ok(())
 }
 
