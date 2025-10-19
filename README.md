@@ -8,7 +8,7 @@ Utilizes `uinput` for virtualizing the keyboards.
 - **Remapping**: Remap keys
 - **Dual function keys**: tap, hold remapping on a single key, overlap causes hold without delay times
 - **Layers**: Hold a key and remap to anything
-- **Home-Row Mods**: Allows setting home-row keys to be modifier keys on hold, time based
+- **Home-Row Mods** (Broken): Allows setting home-row keys to be modifier keys on hold, time based
 
 ## Install
 
@@ -28,4 +28,4 @@ echo uinput | sudo tee /etc/modules-load.d/uinput.conf > /dev/null
 
 Default config location: `~/.config/oxidekeys/config.yml`
 
-You can also change the `hrm_term` per key, if not specified, it uses the global `hrm_term`.
+You can also change the `term` per key, if not specified, it uses the global `term`.

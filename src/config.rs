@@ -35,13 +35,14 @@ pub(crate) fn config() -> Result<Config> {
 pub(crate) type Keyboards = HashMap<String, KeyboardConfig>;
 pub(crate) type Mappings = HashMap<KeyCode, RemapAction>;
 pub(crate) type Layers = HashMap<String, HashMap<KeyCode, HashMap<KeyCode, Vec<KeyCode>>>>;
+pub(crate) type Features = HashMap<String, bool>;
 
 fn default_no_emit() -> bool {
     false
 }
 
-fn default_hrm_term() -> u16 {
-    144
+fn default_term() -> u16 {
+    250
 }
 
 fn default_mappings() -> Mappings {
@@ -52,6 +53,7 @@ fn default_mappings() -> Mappings {
             RemapAction {
                 tap: Some(vec![KeyCode::KEY_SPACE]),
                 hold: Some(vec![KeyCode::KEY_LEFTSHIFT]),
+                overlap: Some(true),
                 ..Default::default()
             },
         ),
@@ -60,6 +62,8 @@ fn default_mappings() -> Mappings {
             KeyCode::KEY_LEFTSHIFT,
             RemapAction {
                 tap: Some(vec![KeyCode::KEY_ESC]),
+                hold: Some(vec![KeyCode::KEY_LEFTMETA]),
+                overlap: Some(true),
                 ..Default::default()
             },
         ),
@@ -68,73 +72,72 @@ fn default_mappings() -> Mappings {
             KeyCode::KEY_CAPSLOCK,
             RemapAction {
                 tap: Some(vec![KeyCode::KEY_BACKSPACE]),
-                ..Default::default()
-            },
-        ),
-        #[allow(clippy::needless_update)]
-        (
-            KeyCode::KEY_A,
-            RemapAction {
-                tap: Some(vec![KeyCode::KEY_A]),
                 hold: Some(vec![KeyCode::KEY_LEFTCTRL]),
-                hrm: Some(true),
+                overlap: Some(true),
                 ..Default::default()
             },
         ),
-        #[allow(clippy::needless_update)]
-        (
-            KeyCode::KEY_SEMICOLON,
-            RemapAction {
-                tap: Some(vec![KeyCode::KEY_SEMICOLON]),
-                hold: Some(vec![KeyCode::KEY_RIGHTCTRL]),
-                hrm: Some(true),
-                ..Default::default()
-            },
-        ),
-        #[allow(clippy::needless_update)]
-        (
-            KeyCode::KEY_S,
-            RemapAction {
-                tap: Some(vec![KeyCode::KEY_S]),
-                hold: Some(vec![KeyCode::KEY_LEFTMETA]),
-                hrm: Some(true),
-                ..Default::default()
-            },
-        ),
-        #[allow(clippy::needless_update)]
-        (
-            KeyCode::KEY_L,
-            RemapAction {
-                tap: Some(vec![KeyCode::KEY_L]),
-                hold: Some(vec![KeyCode::KEY_RIGHTMETA]),
-                hrm: Some(true),
-                ..Default::default()
-            },
-        ),
-        #[allow(clippy::needless_update)]
-        (
-            KeyCode::KEY_D,
-            RemapAction {
-                tap: Some(vec![KeyCode::KEY_D]),
-                hold: Some(vec![KeyCode::KEY_LEFTALT]),
-                hrm: Some(true),
-                ..Default::default()
-            },
-        ),
-        #[allow(clippy::needless_update)]
-        (
-            KeyCode::KEY_K,
-            RemapAction {
-                tap: Some(vec![KeyCode::KEY_K]),
-                hold: Some(vec![KeyCode::KEY_RIGHTALT]),
-                hrm: Some(true),
-                ..Default::default()
-            },
-        ),
+        // #[allow(clippy::needless_update)]
+        // (
+        //     KeyCode::KEY_A,
+        //     RemapAction {
+        //         tap: Some(vec![KeyCode::KEY_A]),
+        //         hold: Some(vec![KeyCode::KEY_LEFTCTRL]),
+        //         ..Default::default()
+        //     },
+        // ),
+        // #[allow(clippy::needless_update)]
+        // (
+        //     KeyCode::KEY_SEMICOLON,
+        //     RemapAction {
+        //         tap: Some(vec![KeyCode::KEY_SEMICOLON]),
+        //         hold: Some(vec![KeyCode::KEY_RIGHTCTRL]),
+        //         ..Default::default()
+        //     },
+        // ),
+        // #[allow(clippy::needless_update)]
+        // (
+        //     KeyCode::KEY_S,
+        //     RemapAction {
+        //         tap: Some(vec![KeyCode::KEY_S]),
+        //         hold: Some(vec![KeyCode::KEY_LEFTMETA]),
+        //         ..Default::default()
+        //     },
+        // ),
+        // #[allow(clippy::needless_update)]
+        // (
+        //     KeyCode::KEY_L,
+        //     RemapAction {
+        //         tap: Some(vec![KeyCode::KEY_L]),
+        //         hold: Some(vec![KeyCode::KEY_RIGHTMETA]),
+        //         ..Default::default()
+        //     },
+        // ),
+        // #[allow(clippy::needless_update)]
+        // (
+        //     KeyCode::KEY_D,
+        //     RemapAction {
+        //         tap: Some(vec![KeyCode::KEY_D]),
+        //         hold: Some(vec![KeyCode::KEY_LEFTALT]),
+        //         ..Default::default()
+        //     },
+        // ),
+        // #[allow(clippy::needless_update)]
+        // (
+        //     KeyCode::KEY_K,
+        //     RemapAction {
+        //         tap: Some(vec![KeyCode::KEY_K]),
+        //         hold: Some(vec![KeyCode::KEY_RIGHTALT]),
+        //         ..Default::default()
+        //     },
+        // ),
         #[allow(clippy::needless_update)]
         (
             KeyCode::KEY_BACKSPACE,
             RemapAction {
+                // NOTE: no-op
+                tap: Some(vec![KeyCode::KEY_RESERVED]),
+                overlap: Some(true),
                 ..Default::default()
             },
         ),
@@ -142,67 +145,123 @@ fn default_mappings() -> Mappings {
 }
 
 fn default_layers() -> Layers {
-    HashMap::from([
-        (
-            "Navigation".into(),
-            HashMap::from([(
-                KeyCode::KEY_RIGHTALT,
-                HashMap::from([
-                    // Vim Arrows
-                    (KeyCode::KEY_J, vec![KeyCode::KEY_LEFT]),
-                    (KeyCode::KEY_C, vec![KeyCode::KEY_DOWN]),
-                    (KeyCode::KEY_V, vec![KeyCode::KEY_UP]),
-                    (KeyCode::KEY_P, vec![KeyCode::KEY_RIGHT]),
-                ]),
-            )]),
-        ),
-        (
-            "Symbols".into(),
-            HashMap::from([(
-                KeyCode::KEY_LEFTALT,
-                HashMap::from([
-                    // (
-                    (
-                        KeyCode::KEY_F,
-                        vec![KeyCode::KEY_RIGHTSHIFT, KeyCode::KEY_9],
-                    ),
-                    // )
-                    (
-                        KeyCode::KEY_J,
-                        vec![KeyCode::KEY_RIGHTSHIFT, KeyCode::KEY_0],
-                    ),
-                    // {
-                    (
-                        KeyCode::KEY_D,
-                        vec![KeyCode::KEY_RIGHTSHIFT, KeyCode::KEY_MINUS],
-                    ),
-                    // }
-                    (
-                        KeyCode::KEY_K,
-                        vec![KeyCode::KEY_RIGHTSHIFT, KeyCode::KEY_EQUAL],
-                    ),
-                    // [
-                    (KeyCode::KEY_S, vec![KeyCode::KEY_MINUS]),
-                    // ]
-                    (KeyCode::KEY_L, vec![KeyCode::KEY_EQUAL]),
-                    // <
-                    (
-                        KeyCode::KEY_A,
-                        vec![KeyCode::KEY_RIGHTSHIFT, KeyCode::KEY_W],
-                    ),
-                    // >
-                    (
-                        KeyCode::KEY_SEMICOLON,
-                        vec![KeyCode::KEY_RIGHTSHIFT, KeyCode::KEY_E],
-                    ),
-                    // /
-                    (KeyCode::KEY_G, vec![KeyCode::KEY_LEFTBRACE]),
-                    // \
-                    (KeyCode::KEY_H, vec![KeyCode::KEY_BACKSLASH]),
-                ]),
-            )]),
-        ),
-    ])
+    HashMap::from([(
+        "Symbols & Navigation".into(),
+        HashMap::from([(
+            KeyCode::KEY_RIGHTALT,
+            HashMap::from([
+                // Vim Arrows
+                (KeyCode::KEY_J, vec![KeyCode::KEY_LEFT]),
+                (KeyCode::KEY_C, vec![KeyCode::KEY_DOWN]),
+                (KeyCode::KEY_V, vec![KeyCode::KEY_UP]),
+                (KeyCode::KEY_P, vec![KeyCode::KEY_RIGHT]),
+                // (
+                (
+                    KeyCode::KEY_G,
+                    vec![KeyCode::KEY_RIGHTSHIFT, KeyCode::KEY_9],
+                ),
+                // )
+                (
+                    KeyCode::KEY_H,
+                    vec![KeyCode::KEY_RIGHTSHIFT, KeyCode::KEY_0],
+                ),
+                // {
+                (
+                    KeyCode::KEY_T,
+                    vec![KeyCode::KEY_RIGHTSHIFT, KeyCode::KEY_MINUS],
+                ),
+                // }
+                (
+                    KeyCode::KEY_Y,
+                    vec![KeyCode::KEY_RIGHTSHIFT, KeyCode::KEY_EQUAL],
+                ),
+                // [
+                (KeyCode::KEY_B, vec![KeyCode::KEY_MINUS]),
+                // ]
+                (KeyCode::KEY_N, vec![KeyCode::KEY_EQUAL]),
+                // /
+                (KeyCode::KEY_Z, vec![KeyCode::KEY_LEFTBRACE]),
+                // \
+                (KeyCode::KEY_SLASH, vec![KeyCode::KEY_BACKSLASH]),
+                // // <
+                // (
+                //     KeyCode::KEY_A,
+                //     vec![KeyCode::KEY_RIGHTSHIFT, KeyCode::KEY_W],
+                // ),
+                // // >
+                // (
+                //     KeyCode::KEY_SEMICOLON,
+                //     vec![KeyCode::KEY_RIGHTSHIFT, KeyCode::KEY_E],
+                // ),
+                // `
+                (KeyCode::KEY_Q, vec![KeyCode::KEY_GRAVE]),
+                // !
+                (
+                    KeyCode::KEY_W,
+                    vec![KeyCode::KEY_RIGHTSHIFT, KeyCode::KEY_1],
+                ),
+                // ?
+                (
+                    KeyCode::KEY_E,
+                    vec![KeyCode::KEY_RIGHTSHIFT, KeyCode::KEY_LEFTBRACE],
+                ),
+                // @
+                (
+                    KeyCode::KEY_R,
+                    vec![KeyCode::KEY_RIGHTSHIFT, KeyCode::KEY_2],
+                ),
+                // =
+                (KeyCode::KEY_A, vec![KeyCode::KEY_RIGHTBRACE]),
+                // |
+                (
+                    KeyCode::KEY_S,
+                    vec![KeyCode::KEY_RIGHTSHIFT, KeyCode::KEY_BACKSLASH],
+                ),
+                // ^
+                (
+                    KeyCode::KEY_D,
+                    vec![KeyCode::KEY_RIGHTSHIFT, KeyCode::KEY_6],
+                ),
+                // _
+                (
+                    KeyCode::KEY_F,
+                    vec![KeyCode::KEY_RIGHTSHIFT, KeyCode::KEY_APOSTROPHE],
+                ),
+                // #
+                (
+                    KeyCode::KEY_X,
+                    vec![KeyCode::KEY_RIGHTSHIFT, KeyCode::KEY_3],
+                ),
+                // $
+                (
+                    KeyCode::KEY_K,
+                    vec![KeyCode::KEY_RIGHTSHIFT, KeyCode::KEY_4],
+                ),
+                // &
+                (
+                    KeyCode::KEY_L,
+                    vec![KeyCode::KEY_RIGHTSHIFT, KeyCode::KEY_7],
+                ),
+                // -
+                (KeyCode::KEY_SEMICOLON, vec![KeyCode::KEY_APOSTROPHE]),
+                // +
+                (
+                    KeyCode::KEY_M,
+                    vec![KeyCode::KEY_RIGHTSHIFT, KeyCode::KEY_RIGHTBRACE],
+                ),
+                // %
+                (
+                    KeyCode::KEY_COMMA,
+                    vec![KeyCode::KEY_RIGHTSHIFT, KeyCode::KEY_5],
+                ),
+                // *
+                (
+                    KeyCode::KEY_DOT,
+                    vec![KeyCode::KEY_RIGHTSHIFT, KeyCode::KEY_8],
+                ),
+            ]),
+        )]),
+    )])
 }
 
 fn default_keyboards() -> Keyboards {
@@ -215,9 +274,19 @@ fn default_keyboards() -> Keyboards {
     )])
 }
 
+fn default_features() -> Features {
+    HashMap::from([
+        ("overlaps".to_owned(), true),
+        ("terms".to_owned(), false),
+        ("layers".to_owned(), true),
+    ])
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub(crate) struct Config {
     pub globals: Globals,
+    #[serde(default = "default_features")]
+    pub features: HashMap<String, bool>,
     #[serde(default = "default_keyboards")]
     pub keyboards: Keyboards,
 }
@@ -226,8 +295,8 @@ pub(crate) struct Config {
 pub(crate) struct Globals {
     #[serde(default = "default_no_emit")]
     pub no_emit: bool,
-    #[serde(default = "default_hrm_term")]
-    pub hrm_term: u16,
+    #[serde(default = "default_term")]
+    pub term: u16,
 }
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
@@ -243,8 +312,9 @@ impl Default for Config {
         Self {
             globals: Globals {
                 no_emit: default_no_emit(),
-                hrm_term: default_hrm_term(),
+                term: default_term(),
             },
+            features: default_features(),
             keyboards: default_keyboards(),
         }
     }
@@ -252,12 +322,19 @@ impl Default for Config {
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub(crate) struct RemapAction {
+    /// Tap sequence
     #[serde(skip_serializing_if = "Option::is_none")]
     pub tap: Option<Vec<KeyCode>>,
+
+    /// Hold sequence
     #[serde(skip_serializing_if = "Option::is_none")]
     pub hold: Option<Vec<KeyCode>>,
+
+    /// Overlap mode
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub hrm: Option<bool>,
+    pub overlap: Option<bool>,
+
+    /// Term override
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub hrm_term: Option<u16>,
+    pub term: Option<u16>,
 }
