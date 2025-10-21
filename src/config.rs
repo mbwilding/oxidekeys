@@ -1,4 +1,3 @@
-use crate::layouts::Layout;
 use anyhow::Result;
 use evdev::KeyCode;
 use log::{debug, info};
@@ -193,11 +192,15 @@ fn default_keyboards() -> Keyboards {
     HashMap::from([(
         "AT Translated Set 2 keyboard".to_owned(),
         KeyboardConfig {
-            layout: Layout::default(),
+            layout: default_layout(),
             mappings: default_mappings(),
             layers: default_layers(),
         },
     )])
+}
+
+fn default_layout() -> Option<String> {
+    Some("dvorak".to_string())
 }
 
 fn default_features() -> Features {
@@ -214,7 +217,8 @@ pub(crate) struct Config {
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub(crate) struct KeyboardConfig {
-    pub layout: Layout,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub layout: Option<String>,
     #[serde(default = "default_mappings")]
     pub mappings: Mappings,
     #[serde(default = "default_layers")]

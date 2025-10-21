@@ -1,42 +1,21 @@
 mod dvorak;
+mod qwerty;
 
 use evdev::KeyCode;
-use serde::{Deserialize, Serialize};
-use std::str::FromStr;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "lowercase")]
-#[derive(Default)]
-pub enum Layout {
-    #[default]
-    Dvorak,
-    Qwerty,
+/// Used for mapping layout definitions
+pub(crate) trait Layout {
+    /// Convert a Qwerty key to the layout’s key
+    fn to(&self, key: &KeyCode) -> KeyCode;
+
+    /// Convert a layout-specific key back to Qwerty
+    fn from(&self, key: &KeyCode) -> KeyCode;
 }
 
-impl FromStr for Layout {
-    type Err = String;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        match s.to_ascii_lowercase().as_str() {
-            "dvorak" => Ok(Layout::Dvorak),
-            "qwerty" => Ok(Layout::Qwerty),
-            _ => Err(format!("invalid layout: {}", s)),
-        }
-    }
-}
-
-impl Layout {
-    pub fn resolve(self, key: &KeyCode) -> KeyCode {
-        match self {
-            Layout::Dvorak => dvorak::resolve(key),
-            Layout::Qwerty => *key,
-        }
-    }
-
-    pub fn resolve_reverse(self, key: &KeyCode) -> KeyCode {
-        match self {
-            Layout::Dvorak => dvorak::resolve_reverse(key),
-            Layout::Qwerty => *key,
-        }
+pub(crate) fn get(layout: &Option<String>) -> Box<dyn Layout> {
+    match layout.as_deref().map(str::to_lowercase).as_deref() {
+        Some("dvorak") => Box::new(dvorak::DvorakLayout),
+        Some("qwerty") => Box::new(qwerty::QwertyLayout),
+        _ => Box::new(qwerty::QwertyLayout),
     }
 }

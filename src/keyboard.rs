@@ -1,7 +1,5 @@
-use crate::{
-    config::{Config, KeyboardConfig},
-    layouts::Layout,
-};
+use crate::config::{Config, KeyboardConfig};
+use crate::layouts::Layout;
 use anyhow::{Result, anyhow, bail};
 use colored::{ColoredString, Colorize};
 use crossbeam_channel::{select, unbounded};
@@ -95,6 +93,8 @@ pub(crate) fn keyboard_processor(keyboard: Keyboard, config: &Config) -> Result<
     let mut active_layer: Option<String> = None;
     let (tx, rx) = unbounded::<InputEvent>();
 
+    let layout = crate::layouts::get(&kb_config.layout);
+
     let feature_layers_enabled = *config.features.get("layers").unwrap_or(&false);
     let feature_overlaps_enabled = *config.features.get("overlaps").unwrap_or(&false);
 
@@ -123,20 +123,20 @@ pub(crate) fn keyboard_processor(keyboard: Keyboard, config: &Config) -> Result<
                 let state = event.value();
                 if state > PRESS { continue; }
                 let key_raw = KeyCode(event.code());
-                let key_layout = kb_config.layout.resolve(&key_raw);
+                let key_layout = layout.to(&key_raw);
 
                 let mut key_handled = false;
 
                 if !key_handled && feature_layers_enabled {
-                    key_handled = feature_layers(&mut virt, &kb_config, &key_layout, state, &mut keys_down, &mut active_layer)?;
+                    key_handled = feature_layers(&mut virt, &kb_config, &layout, &key_layout, state, &mut keys_down, &mut active_layer)?;
                 }
 
                 if !key_handled && feature_overlaps_enabled {
-                    key_handled = feature_overlaps(&mut virt, &kb_config, &key_layout, state, &mut keys_down, &mut active_layer)?;
+                    key_handled = feature_overlaps(&mut virt, &kb_config, &layout, &key_layout, state, &mut keys_down, &mut active_layer)?;
                 }
 
                 if !key_handled {
-                    send_key(&mut virt, &kb_config.layout, &key_layout, state)?;
+                    send_key(&mut virt, &layout, &key_layout, state)?;
                 }
             }
         }
@@ -148,6 +148,7 @@ pub(crate) fn keyboard_processor(keyboard: Keyboard, config: &Config) -> Result<
 fn feature_overlaps(
     _virt: &mut Device,
     _kb_config: &KeyboardConfig,
+    _layout: &Box<dyn Layout>,
     _key_layout: &KeyCode,
     _state: i32,
     _keys_down: &mut HashSet<KeyCode>,
@@ -159,6 +160,7 @@ fn feature_overlaps(
 fn feature_layers(
     virt: &mut Device,
     kb_config: &KeyboardConfig,
+    layout: &Box<dyn Layout>,
     key_layout: &KeyCode,
     state: i32,
     keys_down: &mut HashSet<KeyCode>,
@@ -189,7 +191,7 @@ fn feature_layers(
     {
         for mapping in layer_map.values() {
             if let Some(remapped) = mapping.get(key_layout) {
-                send_keys(virt, &kb_config.layout, remapped, state)?;
+                send_keys(virt, layout, remapped, state)?;
                 return Ok(true);
             }
         }
@@ -198,17 +200,22 @@ fn feature_layers(
     Ok(false)
 }
 
-fn send_key(virt: &mut Device, layout: &Layout, key: &KeyCode, state: i32) -> Result<()> {
-    let resolved_key = layout.resolve_reverse(key);
+fn send_key(virt: &mut Device, layout: &Box<dyn Layout>, key: &KeyCode, state: i32) -> Result<()> {
+    let resolved_key = layout.from(key);
     virt.write(EV_KEY, resolved_key.0 as i32, state)?;
     virt.synchronize()?;
     log_key(key, state);
     Ok(())
 }
 
-fn send_keys(virt: &mut Device, layout: &Layout, keys: &Vec<KeyCode>, state: i32) -> Result<()> {
+fn send_keys(
+    virt: &mut Device,
+    layout: &Box<dyn Layout>,
+    keys: &Vec<KeyCode>,
+    state: i32,
+) -> Result<()> {
     for key in keys {
-        let resolved_key = layout.resolve_reverse(key);
+        let resolved_key = layout.from(key);
         virt.write(EV_KEY, resolved_key.0 as i32, state)?;
     }
     virt.synchronize()?;
