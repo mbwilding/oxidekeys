@@ -21,10 +21,6 @@ pub fn emit(
     events: Vec<OutputEvent>,
     feature_name: &'static str,
 ) -> Result<()> {
-    if ctx.no_emit {
-        return Ok(());
-    }
-
     for event in &events {
         match event {
             OutputEvent::Press(key) => {
@@ -89,10 +85,6 @@ pub fn emit_passthrough(
     key: KeyCode,
     state: i32,
 ) -> Result<()> {
-    if ctx.no_emit {
-        return Ok(());
-    }
-
     let key_reversed = ctx.device_config.layout.resolve_reverse(&key);
 
     device.write(EV_KEY, key_reversed.0 as i32, state)?;

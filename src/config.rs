@@ -39,14 +39,6 @@ pub(crate) type Mappings = HashMap<KeyCode, RemapAction>;
 pub(crate) type Layers = HashMap<String, HashMap<KeyCode, HashMap<KeyCode, Vec<KeyCode>>>>;
 pub(crate) type Features = HashMap<String, bool>;
 
-fn default_no_emit() -> bool {
-    false
-}
-
-fn default_term() -> u16 {
-    250
-}
-
 fn default_mappings() -> Mappings {
     HashMap::from([
         #[allow(clippy::needless_update)]
@@ -55,7 +47,6 @@ fn default_mappings() -> Mappings {
             RemapAction {
                 tap: Some(vec![KeyCode::KEY_SPACE]),
                 hold: Some(vec![KeyCode::KEY_LEFTSHIFT]),
-                overlap: Some(true),
                 ..Default::default()
             },
         ),
@@ -65,7 +56,6 @@ fn default_mappings() -> Mappings {
             RemapAction {
                 tap: Some(vec![KeyCode::KEY_ESC]),
                 hold: Some(vec![KeyCode::KEY_LEFTMETA]),
-                overlap: Some(true),
                 ..Default::default()
             },
         ),
@@ -75,7 +65,6 @@ fn default_mappings() -> Mappings {
             RemapAction {
                 tap: Some(vec![KeyCode::KEY_BACKSPACE]),
                 hold: Some(vec![KeyCode::KEY_LEFTCTRL]),
-                overlap: Some(true),
                 ..Default::default()
             },
         ),
@@ -85,7 +74,6 @@ fn default_mappings() -> Mappings {
             RemapAction {
                 // NOTE: no-op
                 tap: Some(vec![KeyCode::KEY_RESERVED]),
-                overlap: Some(true),
                 ..Default::default()
             },
         ),
@@ -214,28 +202,15 @@ fn default_keyboards() -> Keyboards {
 }
 
 fn default_features() -> Features {
-    HashMap::from([
-        ("overlaps".to_owned(), true),
-        ("terms".to_owned(), false),
-        ("layers".to_owned(), true),
-    ])
+    HashMap::from([("overlaps".to_owned(), true), ("layers".to_owned(), true)])
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub(crate) struct Config {
-    pub globals: Globals,
     #[serde(default = "default_features")]
     pub features: HashMap<String, bool>,
     #[serde(default = "default_keyboards")]
     pub keyboards: Keyboards,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub(crate) struct Globals {
-    #[serde(default = "default_no_emit")]
-    pub no_emit: bool,
-    #[serde(default = "default_term")]
-    pub term: u16,
 }
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
@@ -250,10 +225,6 @@ pub(crate) struct KeyboardConfig {
 impl Default for Config {
     fn default() -> Self {
         Self {
-            globals: Globals {
-                no_emit: default_no_emit(),
-                term: default_term(),
-            },
             features: default_features(),
             keyboards: default_keyboards(),
         }
@@ -269,12 +240,4 @@ pub(crate) struct RemapAction {
     /// Hold sequence
     #[serde(skip_serializing_if = "Option::is_none")]
     pub hold: Option<Vec<KeyCode>>,
-
-    /// Overlap mode
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub overlap: Option<bool>,
-
-    /// Term override
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub term: Option<u16>,
 }

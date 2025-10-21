@@ -50,9 +50,7 @@ impl Feature for OverlapsFeature {
         }
 
         // Is this key configured for overlap behavior?
-        if let Some(remap) = ctx.device_config.mappings.get(&event.key)
-            && remap.overlap.unwrap_or(false)
-        {
+        if let Some(remap) = ctx.device_config.mappings.get(&event.key) {
             match event.state {
                 // Start overlap window: defer emission until we know if another key is pressed
                 PRESS => {

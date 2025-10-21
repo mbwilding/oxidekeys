@@ -2,6 +2,7 @@ use evdev::KeyCode as K;
 
 pub fn resolve(key: &K) -> K {
     match *key {
+        K::KEY_A => K::KEY_A,
         K::KEY_B => K::KEY_X,
         K::KEY_C => K::KEY_J,
         K::KEY_D => K::KEY_E,
@@ -13,6 +14,7 @@ pub fn resolve(key: &K) -> K {
         K::KEY_J => K::KEY_H,
         K::KEY_K => K::KEY_T,
         K::KEY_L => K::KEY_N,
+        K::KEY_M => K::KEY_M,
         K::KEY_N => K::KEY_B,
         K::KEY_O => K::KEY_R,
         K::KEY_P => K::KEY_L,
@@ -41,6 +43,7 @@ pub fn resolve(key: &K) -> K {
 
 pub fn resolve_reverse(key: &K) -> K {
     match *key {
+        K::KEY_A => K::KEY_A,
         K::KEY_X => K::KEY_B,
         K::KEY_J => K::KEY_C,
         K::KEY_E => K::KEY_D,
@@ -52,6 +55,7 @@ pub fn resolve_reverse(key: &K) -> K {
         K::KEY_H => K::KEY_J,
         K::KEY_T => K::KEY_K,
         K::KEY_N => K::KEY_L,
+        K::KEY_M => K::KEY_M,
         K::KEY_B => K::KEY_N,
         K::KEY_R => K::KEY_O,
         K::KEY_L => K::KEY_P,

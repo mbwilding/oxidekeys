@@ -1,17 +1,18 @@
 use crate::{
     config::{Config, KeyboardConfig},
     consts::*,
-    features::{Feature, layers::LayersFeature, overlaps::OverlapsFeature, terms::TermsFeature},
     io::create_virtual_keyboard,
-    pipeline::Pipeline,
+    layouts::Layout,
 };
 use anyhow::{Result, bail};
+use colored::{ColoredString, Colorize};
 use crossbeam_channel::{select, unbounded};
 use evdev::Device as EvDevDevice;
 use evdev::{EventType, InputEvent, KeyCode};
 use log::{debug, info};
 use std::collections::HashSet;
 use udev::Enumerator;
+use uinput::Device;
 
 pub(crate) struct Keyboard {
     pub device: EvDevDevice,
@@ -38,12 +39,11 @@ pub(crate) fn open_keyboard_devices(config: &Config) -> Result<Vec<Keyboard>> {
                     .any(|keyboard| name_value == keyboard.0),
                 None => false,
             };
+
             if name_matches {
                 info!("Keyboard Monitored: {:?}", keyboard.name());
 
-                if !config.globals.no_emit {
-                    keyboard.grab()?;
-                }
+                keyboard.grab()?;
 
                 let keyboard_config = keyboard
                     .name()
@@ -75,31 +75,13 @@ pub(crate) fn open_keyboard_devices(config: &Config) -> Result<Vec<Keyboard>> {
     }
 }
 
-pub(crate) fn keyboard_processor(keyboard: Keyboard, config: &Config) -> Result<()> {
-    let mut virt_keyboard = create_virtual_keyboard(keyboard.device.name().unwrap())?;
+pub(crate) fn keyboard_processor(keyboard: Keyboard) -> Result<()> {
+    let mut virt = create_virtual_keyboard(keyboard.device.name().unwrap())?;
     let mut device = keyboard.device;
     let kb_config = keyboard.config;
     let mut keys_down: HashSet<KeyCode> = HashSet::new();
-    let mut active_layers: HashSet<String> = HashSet::new();
-
+    let mut active_layer: Option<String> = None;
     let (tx, rx) = unbounded::<InputEvent>();
-    let (timer_tx, timer_rx) = unbounded::<KeyCode>();
-
-    let mut features: Vec<Box<dyn Feature + Send>> = Vec::new();
-
-    if *config.features.get("terms").unwrap_or(&true) {
-        features.push(Box::new(TermsFeature::new(timer_tx.clone())));
-    }
-
-    if *config.features.get("overlaps").unwrap_or(&true) {
-        features.push(Box::new(OverlapsFeature::new()));
-    }
-
-    if *config.features.get("layers").unwrap_or(&true) {
-        features.push(Box::new(LayersFeature::new()));
-    }
-
-    let mut pipeline = Pipeline::new(features);
 
     std::thread::spawn(move || {
         loop {
@@ -125,34 +107,146 @@ pub(crate) fn keyboard_processor(keyboard: Keyboard, config: &Config) -> Result<
                 if event.event_type() != EventType::KEY { continue; }
                 let state = event.value();
                 if state > PRESS { continue; }
-                let key = KeyCode(event.code());
-                let key_resolved = kb_config.layout.resolve(&key);
+                let key_raw = KeyCode(event.code());
+                let key_layout = kb_config.layout.resolve(&key_raw);
 
-                pipeline.process_event(
-                    &mut virt_keyboard,
-                    config,
-                    &kb_config,
-                    &mut keys_down,
-                    &mut active_layers,
-                    key_resolved,
-                    state,
-                )?;
-            }
-            recv(timer_rx) -> timer_key => {
-                let key = match timer_key { Ok(k) => k, Err(_) => break };
-                let key_resolved = kb_config.layout.resolve(&key);
+                let is_layer = feature_layer(&mut virt, &kb_config, &key_layout, state, &mut keys_down, &mut active_layer)?;
+                let is_overlap = feature_overlap(&mut virt, &kb_config, &key_layout, state, &mut keys_down, &mut active_layer)?;
 
-                pipeline.process_timer_event(
-                    &mut virt_keyboard,
-                    config,
-                    &kb_config,
-                    &mut keys_down,
-                    &mut active_layers,
-                    key_resolved,
-                )?;
+                if !is_layer && !is_overlap {
+                    send_key(&mut virt, &kb_config.layout, &key_layout, state)?;
+                }
             }
         }
     }
 
     Ok(())
+}
+
+fn feature_overlap(
+    virt: &mut Device,
+    kb_config: &KeyboardConfig,
+    key_layout: &KeyCode,
+    state: i32,
+    keys_down: &mut HashSet<KeyCode>,
+    active_layer: &mut Option<String>,
+) -> Result<bool> {
+    Ok(false)
+}
+
+fn feature_layer(
+    virt: &mut Device,
+    kb_config: &KeyboardConfig,
+    key_layout: &KeyCode,
+    state: i32,
+    keys_down: &mut HashSet<KeyCode>,
+    active_layer: &mut Option<String>,
+) -> Result<bool> {
+    for (layer_name, layer_def) in &kb_config.layers {
+        if layer_def.contains_key(key_layout) {
+            match state {
+                PRESS => {
+                    keys_down.insert(*key_layout);
+                    *active_layer = Some(layer_name.to_owned());
+                }
+                RELEASE => {
+                    keys_down.remove(key_layout);
+                    *active_layer = None;
+                }
+                _ => {}
+            }
+
+            log_layer(layer_name, state);
+
+            return Ok(true);
+        }
+    }
+
+    if let Some(layer_name) = active_layer
+        && let Some(layer_map) = kb_config.layers.get(layer_name)
+    {
+        for mapping in layer_map.values() {
+            if let Some(remapped) = mapping.get(key_layout) {
+                send_keys(virt, &kb_config.layout, &remapped, state)?;
+                return Ok(true);
+            }
+        }
+    }
+
+    Ok(false)
+}
+
+fn send_key(virt: &mut Device, layout: &Layout, key: &KeyCode, state: i32) -> Result<()> {
+    let resolved_key = layout.resolve_reverse(key);
+    virt.write(EV_KEY, resolved_key.0 as i32, state)?;
+    virt.synchronize()?;
+    log_key(&resolved_key, state);
+    Ok(())
+}
+
+fn send_keys(virt: &mut Device, layout: &Layout, keys: &Vec<KeyCode>, state: i32) -> Result<()> {
+    let mut resolved_keys: Vec<KeyCode> = Vec::with_capacity(keys.len());
+    for key in keys {
+        let key = layout.resolve_reverse(key);
+        virt.write(EV_KEY, key.0 as i32, state)?;
+        resolved_keys.push(key);
+    }
+    virt.synchronize()?;
+    log_keys(&resolved_keys, state);
+    Ok(())
+}
+
+fn log_keys(keys: &Vec<KeyCode>, state: i32) {
+    let key_str = keys
+        .iter()
+        .map(|k| format!("{:?}", k).chars().skip(4).collect::<String>())
+        .collect::<Vec<_>>()
+        .join(", ");
+
+    debug!(
+        "{} {}: {}",
+        state_arrow(state),
+        "KEYS".yellow(),
+        key_str.bright_blue(),
+    );
+}
+
+fn log_key(key: &KeyCode, state: i32) {
+    debug!(
+        "{} {}: {}",
+        state_arrow(state),
+        "KEY".yellow(),
+        &format!("{:?}", key)[4..].bright_blue(),
+    );
+}
+
+fn log_layer(layer: &str, state: i32) {
+    debug!(
+        "{} {}: {}",
+        state_arrow(state),
+        "LAYER".purple(),
+        layer.bright_blue(),
+    );
+}
+
+fn state_arrow(state: i32) -> ColoredString {
+    match state {
+        PRESS => "↓".green().bold(),
+        _ => "↑".red().bold(),
+    }
+}
+
+#[allow(dead_code)]
+fn is_modifier(key: &KeyCode) -> bool {
+    matches!(
+        *key,
+        KeyCode::KEY_LEFTSHIFT
+            | KeyCode::KEY_RIGHTSHIFT
+            | KeyCode::KEY_LEFTCTRL
+            | KeyCode::KEY_RIGHTCTRL
+            | KeyCode::KEY_LEFTALT
+            | KeyCode::KEY_RIGHTALT
+            | KeyCode::KEY_LEFTMETA
+            | KeyCode::KEY_RIGHTMETA
+    )
 }

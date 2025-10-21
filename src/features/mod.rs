@@ -1,6 +1,4 @@
-pub mod layers;
 pub mod overlaps;
-pub mod terms;
 
 use crate::config::KeyboardConfig;
 use anyhow::Result;
@@ -33,8 +31,6 @@ pub struct Context<'a> {
     pub device_config: &'a KeyboardConfig,
     pub keys_down: &'a mut HashSet<KeyCode>,
     pub active_layers: &'a mut HashSet<String>,
-    pub no_emit: bool,
-    pub global_term: u16,
 }
 
 pub trait Feature {
