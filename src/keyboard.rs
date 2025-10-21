@@ -182,11 +182,9 @@ fn feature_dual_function(
                     if let Some(hold_keys) = &remap.hold {
                         send_keys(virt, layout, hold_keys, RELEASE)?;
                     }
-                } else {
-                    if let Some(tap_keys) = &remap.tap {
-                        send_keys(virt, layout, tap_keys, PRESS)?;
-                        send_keys(virt, layout, tap_keys, RELEASE)?;
-                    }
+                } else if let Some(tap_keys) = &remap.tap {
+                    send_keys(virt, layout, tap_keys, PRESS)?;
+                    send_keys(virt, layout, tap_keys, RELEASE)?;
                 }
 
                 return Ok(true);
@@ -199,14 +197,14 @@ fn feature_dual_function(
 
     if state == PRESS && !keys_down.is_empty() && !keys_down.contains(key) {
         for origin in keys_down.iter() {
-            if !holds_triggered.contains(origin) {
-                if let Some(remap) = kb_config.mappings.get(origin) {
-                    if let Some(hold_keys) = &remap.hold {
-                        send_keys(virt, layout, hold_keys, PRESS)?;
-                    }
-
-                    holds_triggered.insert(*origin);
+            if !holds_triggered.contains(origin)
+                && let Some(remap) = kb_config.mappings.get(origin)
+            {
+                if let Some(hold_keys) = &remap.hold {
+                    send_keys(virt, layout, hold_keys, PRESS)?;
                 }
+
+                holds_triggered.insert(*origin);
             }
         }
 
