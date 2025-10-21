@@ -70,8 +70,6 @@ fn default_mappings() -> Mappings {
         (
             KeyCode::KEY_BACKSPACE,
             RemapAction {
-                // NOTE: no-op
-                tap: Some(vec![KeyCode::KEY_RESERVED]),
                 ..Default::default()
             },
         ),
