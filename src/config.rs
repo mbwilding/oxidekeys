@@ -204,7 +204,7 @@ fn default_layout() -> Option<String> {
 }
 
 fn default_features() -> Features {
-    HashMap::from([("overlaps".to_owned(), true), ("layers".to_owned(), true)])
+    HashMap::from([("dual_function".to_owned(), true), ("layers".to_owned(), true)])
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

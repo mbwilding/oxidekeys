@@ -90,13 +90,14 @@ pub(crate) fn keyboard_processor(keyboard: Keyboard, config: &Config) -> Result<
     let mut device = keyboard.device;
     let kb_config = keyboard.config;
     let mut keys_down: HashSet<KeyCode> = HashSet::new();
+    let mut holds_triggered: HashSet<KeyCode> = HashSet::new();
     let mut active_layer: Option<String> = None;
     let (tx, rx) = unbounded::<InputEvent>();
 
     let layout = crate::layouts::get(&kb_config.layout);
 
     let feature_layers_enabled = *config.features.get("layers").unwrap_or(&false);
-    let feature_overlaps_enabled = *config.features.get("overlaps").unwrap_or(&false);
+    let feature_dual_function_enabled = *config.features.get("dual_function").unwrap_or(&false);
 
     std::thread::spawn(move || {
         loop {
@@ -131,8 +132,8 @@ pub(crate) fn keyboard_processor(keyboard: Keyboard, config: &Config) -> Result<
                     key_handled = feature_layers(&mut virt, &kb_config, &layout, &key_layout, state, &mut keys_down, &mut active_layer)?;
                 }
 
-                if !key_handled && feature_overlaps_enabled {
-                    key_handled = feature_overlaps(&mut virt, &kb_config, &layout, &key_layout, state, &mut keys_down, &mut active_layer)?;
+                if !key_handled && feature_dual_function_enabled {
+                    key_handled = feature_dual_function(&mut virt, &kb_config, &layout, &key_layout, state, &mut keys_down, &mut holds_triggered)?;
                 }
 
                 if !key_handled {
@@ -145,15 +146,73 @@ pub(crate) fn keyboard_processor(keyboard: Keyboard, config: &Config) -> Result<
     Ok(())
 }
 
-fn feature_overlaps(
-    _virt: &mut Device,
-    _kb_config: &KeyboardConfig,
-    _layout: &Box<dyn Layout>,
-    _key_layout: &KeyCode,
-    _state: i32,
-    _keys_down: &mut HashSet<KeyCode>,
-    _active_layer: &mut Option<String>,
+/// Dual Function - Tap-Hold
+/// - If you press and release a key without overlapping another, Tap fires.
+/// - If you press the key and while it's held another key overlaps, Hold fires.
+fn feature_dual_function(
+    virt: &mut Device,
+    kb_config: &KeyboardConfig,
+    layout: &Box<dyn Layout>,
+    key: &KeyCode,
+    state: i32,
+    keys_down: &mut HashSet<KeyCode>,
+    holds_triggered: &mut HashSet<KeyCode>,
 ) -> Result<bool> {
+    if let Some(remap) = kb_config.mappings.get(key) {
+        match state {
+            PRESS => {
+                keys_down.insert(*key);
+
+                let overlap_now = keys_down.len() > 1;
+                if overlap_now {
+                    holds_triggered.insert(*key);
+
+                    if let Some(hold_keys) = &remap.hold {
+                        send_keys(virt, layout, hold_keys, PRESS)?;
+                    }
+                }
+
+                return Ok(true);
+            }
+            RELEASE => {
+                let was_hold = holds_triggered.remove(key);
+                keys_down.remove(key);
+
+                if was_hold {
+                    if let Some(hold_keys) = &remap.hold {
+                        send_keys(virt, layout, hold_keys, RELEASE)?;
+                    }
+                } else {
+                    if let Some(tap_keys) = &remap.tap {
+                        send_keys(virt, layout, tap_keys, PRESS)?;
+                        send_keys(virt, layout, tap_keys, RELEASE)?;
+                    }
+                }
+
+                return Ok(true);
+            }
+            _ => {}
+        }
+
+        return Ok(true);
+    }
+
+    if state == PRESS && !keys_down.is_empty() && !keys_down.contains(key) {
+        for origin in keys_down.iter() {
+            if !holds_triggered.contains(origin) {
+                if let Some(remap) = kb_config.mappings.get(origin) {
+                    if let Some(hold_keys) = &remap.hold {
+                        send_keys(virt, layout, hold_keys, PRESS)?;
+                    }
+
+                    holds_triggered.insert(*origin);
+                }
+            }
+        }
+
+        return Ok(false);
+    }
+
     Ok(false)
 }
 
@@ -161,20 +220,20 @@ fn feature_layers(
     virt: &mut Device,
     kb_config: &KeyboardConfig,
     layout: &Box<dyn Layout>,
-    key_layout: &KeyCode,
+    key: &KeyCode,
     state: i32,
     keys_down: &mut HashSet<KeyCode>,
     active_layer: &mut Option<String>,
 ) -> Result<bool> {
     for (layer_name, layer_def) in &kb_config.layers {
-        if layer_def.contains_key(key_layout) {
+        if layer_def.contains_key(key) {
             match state {
                 PRESS => {
-                    keys_down.insert(*key_layout);
+                    keys_down.insert(*key);
                     *active_layer = Some(layer_name.to_owned());
                 }
                 RELEASE => {
-                    keys_down.remove(key_layout);
+                    keys_down.remove(key);
                     *active_layer = None;
                 }
                 _ => {}
@@ -190,7 +249,7 @@ fn feature_layers(
         && let Some(layer_map) = kb_config.layers.get(layer_name)
     {
         for mapping in layer_map.values() {
-            if let Some(remapped) = mapping.get(key_layout) {
+            if let Some(remapped) = mapping.get(key) {
                 send_keys(virt, layout, remapped, state)?;
                 return Ok(true);
             }
