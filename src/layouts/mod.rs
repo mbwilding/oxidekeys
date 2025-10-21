@@ -1,8 +1,8 @@
+mod dvorak;
+
 use evdev::KeyCode;
 use serde::{Deserialize, Serialize};
 use std::str::FromStr;
-
-mod dvorak;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]

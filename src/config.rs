@@ -1,3 +1,4 @@
+use crate::layouts::Layout;
 use anyhow::Result;
 use evdev::KeyCode;
 use log::{debug, info};
@@ -5,8 +6,6 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::PathBuf;
 use std::{env, fs};
-
-use crate::layouts::Layout;
 
 pub(crate) fn config() -> Result<Config> {
     let config_path = match env::args().nth(1) {

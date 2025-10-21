@@ -1,18 +1,21 @@
 use crate::{
     config::{Config, KeyboardConfig},
-    consts::*,
     layouts::Layout,
 };
-use anyhow::{Result, bail, anyhow};
+use anyhow::{Result, anyhow, bail};
 use colored::{ColoredString, Colorize};
 use crossbeam_channel::{select, unbounded};
 use evdev::Device as EvDevDevice;
-use uinput::device::Device as UInputDevice;
 use evdev::{EventType, InputEvent, KeyCode};
 use log::{debug, info};
 use std::collections::HashSet;
 use udev::Enumerator;
 use uinput::Device;
+use uinput::device::Device as UInputDevice;
+
+pub(crate) const RELEASE: i32 = 0;
+pub(crate) const PRESS: i32 = 1;
+pub(crate) const EV_KEY: i32 = 1;
 
 pub(crate) struct Keyboard {
     pub device: EvDevDevice,
@@ -75,7 +78,7 @@ pub(crate) fn open_keyboard_devices(config: &Config) -> Result<Vec<Keyboard>> {
     }
 }
 
-pub fn create_virtual_keyboard(name: &str) -> Result<UInputDevice> {
+pub(crate) fn create_virtual_keyboard(name: &str) -> Result<UInputDevice> {
     let device = uinput::default()
         .map_err(|e| anyhow!("Failed to open /dev/uinput (sudo modprobe uinput): {e}"))?
         .name(format!("{} OxideKeys", name))?
@@ -133,12 +136,12 @@ pub(crate) fn keyboard_processor(keyboard: Keyboard) -> Result<()> {
 }
 
 fn feature_overlap(
-    virt: &mut Device,
-    kb_config: &KeyboardConfig,
-    key_layout: &KeyCode,
-    state: i32,
-    keys_down: &mut HashSet<KeyCode>,
-    active_layer: &mut Option<String>,
+    _virt: &mut Device,
+    _kb_config: &KeyboardConfig,
+    _key_layout: &KeyCode,
+    _state: i32,
+    _keys_down: &mut HashSet<KeyCode>,
+    _active_layer: &mut Option<String>,
 ) -> Result<bool> {
     Ok(false)
 }
@@ -176,7 +179,7 @@ fn feature_layer(
     {
         for mapping in layer_map.values() {
             if let Some(remapped) = mapping.get(key_layout) {
-                send_keys(virt, &kb_config.layout, &remapped, state)?;
+                send_keys(virt, &kb_config.layout, remapped, state)?;
                 return Ok(true);
             }
         }
@@ -205,7 +208,7 @@ fn send_keys(virt: &mut Device, layout: &Layout, keys: &Vec<KeyCode>, state: i32
     Ok(())
 }
 
-fn log_keys(keys: &Vec<KeyCode>, state: i32) {
+fn log_keys(keys: &[KeyCode], state: i32) {
     let key_str = keys
         .iter()
         .map(|k| format!("{:?}", k).chars().skip(4).collect::<String>())

@@ -1,6 +1,6 @@
 use evdev::KeyCode as K;
 
-pub fn resolve(key: &K) -> K {
+pub(crate) fn resolve(key: &K) -> K {
     match *key {
         K::KEY_A => K::KEY_A,
         K::KEY_B => K::KEY_X,
