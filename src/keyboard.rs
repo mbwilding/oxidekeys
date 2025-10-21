@@ -162,12 +162,15 @@ pub(crate) fn keyboard_processor(keyboard: Keyboard, config: &Config) -> Result<
 
                 let mut key_handled = false;
 
-                if !key_handled && feature_layers_enabled {
-                    key_handled = feature_layers(&mut virt, &kb_config, &layout, &key_layout, state, &mut keys_down, &mut active_layer)?;
+                if feature_layers_enabled {
+                    let mutated = feature_layers(&mut virt, &kb_config, &layout, &key_layout, state, &mut keys_down, &mut active_layer)?;
+                    if !key_handled {
+                        key_handled = mutated
+                    }
                 }
 
-                if !key_handled && feature_dual_function_enabled {
-                    key_handled = feature_dual_function_with_double_tap(
+                if feature_dual_function_enabled {
+                    let mutated = feature_dual_function_with_double_tap(
                         &mut virt,
                         &kb_config,
                         &layout,
@@ -178,6 +181,9 @@ pub(crate) fn keyboard_processor(keyboard: Keyboard, config: &Config) -> Result<
                         &mut double_tap_states,
                         &mut repeat_states
                     )?;
+                    if !key_handled {
+                        key_handled = mutated
+                    }
                 }
 
                 if !key_handled {
