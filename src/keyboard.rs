@@ -71,7 +71,12 @@ pub(crate) fn open_keyboard_devices(config: &Config) -> Result<Vec<Keyboard>> {
                 }
 
                 keyboard.grab()?;
-                info!("Keyboard Monitored: {:?}", keyboard.name());
+
+                if let Some(name) = keyboard.name() {
+                    info!("Keyboard monitored: {}", name);
+                } else {
+                    info!("Keyboard monitored");
+                }
 
                 let keyboard_config = keyboard
                     .name()
