@@ -92,22 +92,22 @@ fn default_layers() -> Layers {
                 // (
                 (
                     KeyCode::KEY_I,
-                    vec![KeyCode::KEY_RIGHTSHIFT, KeyCode::KEY_9],
+                    vec![KeyCode::KEY_LEFTSHIFT, KeyCode::KEY_9],
                 ),
                 // )
                 (
                     KeyCode::KEY_D,
-                    vec![KeyCode::KEY_RIGHTSHIFT, KeyCode::KEY_0],
+                    vec![KeyCode::KEY_LEFTSHIFT, KeyCode::KEY_0],
                 ),
                 // {
                 (
                     KeyCode::KEY_X,
-                    vec![KeyCode::KEY_RIGHTSHIFT, KeyCode::KEY_LEFTBRACE],
+                    vec![KeyCode::KEY_LEFTSHIFT, KeyCode::KEY_LEFTBRACE],
                 ),
                 // }
                 (
                     KeyCode::KEY_B,
-                    vec![KeyCode::KEY_RIGHTSHIFT, KeyCode::KEY_RIGHTBRACE],
+                    vec![KeyCode::KEY_LEFTSHIFT, KeyCode::KEY_RIGHTBRACE],
                 ),
                 // [
                 (KeyCode::KEY_Y, vec![KeyCode::KEY_LEFTBRACE]),
@@ -122,66 +122,66 @@ fn default_layers() -> Layers {
                 // !
                 (
                     KeyCode::KEY_COMMA,
-                    vec![KeyCode::KEY_RIGHTSHIFT, KeyCode::KEY_1],
+                    vec![KeyCode::KEY_LEFTSHIFT, KeyCode::KEY_1],
                 ),
                 // ?
                 (
                     KeyCode::KEY_DOT,
-                    vec![KeyCode::KEY_RIGHTSHIFT, KeyCode::KEY_SLASH],
+                    vec![KeyCode::KEY_LEFTSHIFT, KeyCode::KEY_SLASH],
                 ),
                 // @
                 (
                     KeyCode::KEY_P,
-                    vec![KeyCode::KEY_RIGHTSHIFT, KeyCode::KEY_2],
+                    vec![KeyCode::KEY_LEFTSHIFT, KeyCode::KEY_2],
                 ),
                 // =
                 (KeyCode::KEY_A, vec![KeyCode::KEY_EQUAL]),
                 // |
                 (
                     KeyCode::KEY_O,
-                    vec![KeyCode::KEY_RIGHTSHIFT, KeyCode::KEY_BACKSLASH],
+                    vec![KeyCode::KEY_LEFTSHIFT, KeyCode::KEY_BACKSLASH],
                 ),
                 // ^
                 (
                     KeyCode::KEY_E,
-                    vec![KeyCode::KEY_RIGHTSHIFT, KeyCode::KEY_6],
+                    vec![KeyCode::KEY_LEFTSHIFT, KeyCode::KEY_6],
                 ),
                 // _
                 (
                     KeyCode::KEY_U,
-                    vec![KeyCode::KEY_RIGHTSHIFT, KeyCode::KEY_MINUS],
+                    vec![KeyCode::KEY_LEFTSHIFT, KeyCode::KEY_MINUS],
                 ),
                 // #
                 (
                     KeyCode::KEY_Q,
-                    vec![KeyCode::KEY_RIGHTSHIFT, KeyCode::KEY_3],
+                    vec![KeyCode::KEY_LEFTSHIFT, KeyCode::KEY_3],
                 ),
                 // $
                 (
                     KeyCode::KEY_T,
-                    vec![KeyCode::KEY_RIGHTSHIFT, KeyCode::KEY_4],
+                    vec![KeyCode::KEY_LEFTSHIFT, KeyCode::KEY_4],
                 ),
                 // &
                 (
                     KeyCode::KEY_N,
-                    vec![KeyCode::KEY_RIGHTSHIFT, KeyCode::KEY_7],
+                    vec![KeyCode::KEY_LEFTSHIFT, KeyCode::KEY_7],
                 ),
                 // -
                 (KeyCode::KEY_S, vec![KeyCode::KEY_MINUS]),
                 // +
                 (
                     KeyCode::KEY_M,
-                    vec![KeyCode::KEY_RIGHTSHIFT, KeyCode::KEY_EQUAL],
+                    vec![KeyCode::KEY_LEFTSHIFT, KeyCode::KEY_EQUAL],
                 ),
                 // %
                 (
                     KeyCode::KEY_W,
-                    vec![KeyCode::KEY_RIGHTSHIFT, KeyCode::KEY_5],
+                    vec![KeyCode::KEY_LEFTSHIFT, KeyCode::KEY_5],
                 ),
                 // *
                 (
                     KeyCode::KEY_V,
-                    vec![KeyCode::KEY_RIGHTSHIFT, KeyCode::KEY_8],
+                    vec![KeyCode::KEY_LEFTSHIFT, KeyCode::KEY_8],
                 ),
             ]),
         )]),
