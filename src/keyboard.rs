@@ -5,7 +5,7 @@ use colored::{ColoredString, Colorize};
 use crossbeam_channel::{select, unbounded};
 use evdev::Device as EvDevDevice;
 use evdev::{EventType, InputEvent, KeyCode};
-use log::{debug, info};
+use log::{debug, info, warn};
 use std::collections::HashMap;
 use std::collections::HashSet;
 use std::time::{Duration, Instant};
@@ -55,19 +55,23 @@ pub(crate) fn open_keyboard_devices(config: &Config) -> Result<Vec<Keyboard>> {
             };
 
             if name_matches {
-                info!("Keyboard Monitored: {:?}", keyboard.name());
-
                 // Wait for all keys to be unpressed before grabbing the input device, otherwise
                 // those keys get into a weird state
+                let mut first = true;
                 loop {
                     let key_states = keyboard.get_key_state()?;
                     if key_states.iter().len() == 0 {
                         break;
                     }
+                    if first {
+                        first = false;
+                        warn!("Waiting for keys to be released");
+                    }
                     std::thread::sleep(Duration::from_millis(20));
                 }
 
                 keyboard.grab()?;
+                info!("Keyboard Monitored: {:?}", keyboard.name());
 
                 let keyboard_config = keyboard
                     .name()

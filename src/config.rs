@@ -1,6 +1,6 @@
 use anyhow::Result;
 use evdev::KeyCode;
-use log::{debug, info};
+use log::{info, trace};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::PathBuf;
@@ -27,7 +27,7 @@ pub(crate) fn config() -> Result<Config> {
         serde_yaml::from_str(&config_content)?
     };
 
-    debug!("Config: {:#?}", config);
+    trace!("Config: {:#?}", config);
 
     Ok(config)
 }
