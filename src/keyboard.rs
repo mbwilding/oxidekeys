@@ -163,14 +163,14 @@ pub(crate) fn keyboard_processor(keyboard: Keyboard, config: &Config) -> Result<
                 let mut key_handled = false;
 
                 if feature_layers_enabled {
-                    let mutated = feature_layers(&mut virt, &kb_config, &layout, &key_layout, state, &mut keys_down, &mut active_layer)?;
+                    let mutated = feature_layers(&mut virt, &kb_config, &layout, &key_layout, state, &mut keys_down, &mut active_layer, &mut holds_triggered)?;
                     if !key_handled {
                         key_handled = mutated
                     }
                 }
 
                 if feature_dual_function_enabled {
-                    let mutated = feature_dual_function_with_double_tap(
+                    let mutated = feature_dual_function(
                         &mut virt,
                         &kb_config,
                         &layout,
@@ -200,7 +200,7 @@ pub(crate) fn keyboard_processor(keyboard: Keyboard, config: &Config) -> Result<
 /// - If you press and release a key without overlapping another, Tap fires.
 /// - If you press the key and while it's held another key overlaps, Hold fires.
 /// - If you double-tap a key within the timeout, it starts repeating until released.
-fn feature_dual_function_with_double_tap(
+fn feature_dual_function(
     virt: &mut Device,
     kb_config: &KeyboardConfig,
     layout: &Box<dyn Layout>,
@@ -332,6 +332,7 @@ fn feature_layers(
     state: i32,
     keys_down: &mut HashSet<KeyCode>,
     active_layer: &mut Option<String>,
+    holds_triggered: &mut HashSet<KeyCode>,
 ) -> Result<bool> {
     for (layer_name, layer_def) in &kb_config.layers {
         if layer_def.contains_key(key) {
@@ -342,6 +343,17 @@ fn feature_layers(
                 }
                 RELEASE => {
                     keys_down.remove(key);
+
+                    if let Some(_prev_layer) = active_layer.take() {
+                        for held_key in holds_triggered.iter().collect::<Vec<_>>() {
+                            if let Some(remap) = kb_config.mappings.get(held_key)
+                                && let Some(hold_keys) = &remap.hold {
+                                    send_keys(virt, layout, hold_keys, RELEASE)?;
+                                }
+                        }
+                        holds_triggered.clear();
+                    }
+
                     *active_layer = None;
                 }
                 _ => {}
