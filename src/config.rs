@@ -102,18 +102,18 @@ fn default_layers() -> Layers {
                 ),
                 // {
                 (
-                    KeyCode::KEY_Y,
+                    KeyCode::KEY_X,
                     vec![KeyCode::KEY_RIGHTSHIFT, KeyCode::KEY_LEFTBRACE],
                 ),
                 // }
                 (
-                    KeyCode::KEY_F,
+                    KeyCode::KEY_B,
                     vec![KeyCode::KEY_RIGHTSHIFT, KeyCode::KEY_RIGHTBRACE],
                 ),
                 // [
-                (KeyCode::KEY_X, vec![KeyCode::KEY_LEFTBRACE]),
+                (KeyCode::KEY_Y, vec![KeyCode::KEY_LEFTBRACE]),
                 // ]
-                (KeyCode::KEY_B, vec![KeyCode::KEY_RIGHTBRACE]),
+                (KeyCode::KEY_F, vec![KeyCode::KEY_RIGHTBRACE]),
                 // /
                 (KeyCode::KEY_SEMICOLON, vec![KeyCode::KEY_SLASH]),
                 // \

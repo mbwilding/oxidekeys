@@ -87,13 +87,16 @@ pub(crate) fn create_virtual_keyboard(name: &str) -> Result<UInputDevice> {
     Ok(device)
 }
 
-pub(crate) fn keyboard_processor(keyboard: Keyboard) -> Result<()> {
+pub(crate) fn keyboard_processor(keyboard: Keyboard, config: &Config) -> Result<()> {
     let mut virt = create_virtual_keyboard(keyboard.device.name().unwrap())?;
     let mut device = keyboard.device;
     let kb_config = keyboard.config;
     let mut keys_down: HashSet<KeyCode> = HashSet::new();
     let mut active_layer: Option<String> = None;
     let (tx, rx) = unbounded::<InputEvent>();
+
+    let feature_layers_enabled = *config.features.get("layers").unwrap_or(&false);
+    let feature_overlaps_enabled = *config.features.get("overlaps").unwrap_or(&false);
 
     std::thread::spawn(move || {
         loop {
@@ -122,10 +125,17 @@ pub(crate) fn keyboard_processor(keyboard: Keyboard) -> Result<()> {
                 let key_raw = KeyCode(event.code());
                 let key_layout = kb_config.layout.resolve(&key_raw);
 
-                let is_layer = feature_layer(&mut virt, &kb_config, &key_layout, state, &mut keys_down, &mut active_layer)?;
-                let is_overlap = feature_overlap(&mut virt, &kb_config, &key_layout, state, &mut keys_down, &mut active_layer)?;
+                let mut key_handled = false;
 
-                if !is_layer && !is_overlap {
+                if !key_handled && feature_layers_enabled {
+                    key_handled = feature_layers(&mut virt, &kb_config, &key_layout, state, &mut keys_down, &mut active_layer)?;
+                }
+
+                if !key_handled && feature_overlaps_enabled {
+                    key_handled = feature_overlaps(&mut virt, &kb_config, &key_layout, state, &mut keys_down, &mut active_layer)?;
+                }
+
+                if !key_handled {
                     send_key(&mut virt, &kb_config.layout, &key_layout, state)?;
                 }
             }
@@ -135,7 +145,7 @@ pub(crate) fn keyboard_processor(keyboard: Keyboard) -> Result<()> {
     Ok(())
 }
 
-fn feature_overlap(
+fn feature_overlaps(
     _virt: &mut Device,
     _kb_config: &KeyboardConfig,
     _key_layout: &KeyCode,
@@ -146,7 +156,7 @@ fn feature_overlap(
     Ok(false)
 }
 
-fn feature_layer(
+fn feature_layers(
     virt: &mut Device,
     kb_config: &KeyboardConfig,
     key_layout: &KeyCode,

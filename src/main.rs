@@ -16,7 +16,7 @@ fn main() -> Result<()> {
 
     if keyboards.len() > 1 {
         if let Some(keyboard) = keyboards.into_iter().next() {
-            if let Err(e) = keyboard_processor(keyboard) {
+            if let Err(e) = keyboard_processor(keyboard, &config) {
                 eprintln!("Error processing keyboard: {}", e);
                 return Err(e);
             }
@@ -28,8 +28,9 @@ fn main() -> Result<()> {
         let mut handles = Vec::new();
 
         for keyboard in keyboards {
+            let config = config.clone();
             let handle = thread::spawn(move || {
-                if let Err(e) = keyboard_processor(keyboard) {
+                if let Err(e) = keyboard_processor(keyboard, &config) {
                     eprintln!("Thread error processing keyboard: {}", e);
                 }
             });
