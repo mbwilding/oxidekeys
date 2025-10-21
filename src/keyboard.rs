@@ -179,7 +179,7 @@ pub(crate) fn keyboard_processor(keyboard: Keyboard, config: &Config) -> Result<
                         &mut keys_down,
                         &mut holds_triggered,
                         &mut double_tap_states,
-                        &mut repeat_states
+                        &mut repeat_states,
                     )?;
                     if !key_handled {
                         key_handled = mutated
@@ -216,7 +216,11 @@ fn feature_dual_function_with_double_tap(
             PRESS => {
                 keys_down.insert(*key);
 
-                let overlap_now = keys_down.len() > 1;
+                let non_layer_modifier_keys_down = keys_down
+                    .iter()
+                    .filter(|k| !is_layer_key(k, kb_config) && !is_modifier(k))
+                    .count();
+                let overlap_now = non_layer_modifier_keys_down > 1;
                 if overlap_now {
                     holds_triggered.insert(*key);
 
@@ -302,6 +306,8 @@ fn feature_dual_function_with_double_tap(
     if state == PRESS && !keys_down.is_empty() && !keys_down.contains(key) {
         for origin in keys_down.iter() {
             if !holds_triggered.contains(origin)
+                && !is_layer_key(origin, kb_config)
+                && !is_modifier(origin)
                 && let Some(remap) = kb_config.mappings.get(origin)
             {
                 if let Some(hold_keys) = &remap.hold {
@@ -424,7 +430,6 @@ fn state_arrow(state: i32) -> ColoredString {
     }
 }
 
-#[allow(dead_code)]
 fn is_modifier(key: &KeyCode) -> bool {
     matches!(
         *key,
@@ -437,4 +442,11 @@ fn is_modifier(key: &KeyCode) -> bool {
             | KeyCode::KEY_LEFTMETA
             | KeyCode::KEY_RIGHTMETA
     )
+}
+
+fn is_layer_key(key: &KeyCode, kb_config: &KeyboardConfig) -> bool {
+    kb_config
+        .layers
+        .iter()
+        .any(|(_, layer_def)| layer_def.contains_key(key))
 }
