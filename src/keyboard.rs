@@ -1,13 +1,13 @@
 use crate::{
     config::{Config, KeyboardConfig},
     consts::*,
-    io::create_virtual_keyboard,
     layouts::Layout,
 };
-use anyhow::{Result, bail};
+use anyhow::{Result, bail, anyhow};
 use colored::{ColoredString, Colorize};
 use crossbeam_channel::{select, unbounded};
 use evdev::Device as EvDevDevice;
+use uinput::device::Device as UInputDevice;
 use evdev::{EventType, InputEvent, KeyCode};
 use log::{debug, info};
 use std::collections::HashSet;
@@ -73,6 +73,15 @@ pub(crate) fn open_keyboard_devices(config: &Config) -> Result<Vec<Keyboard>> {
     } else {
         Ok(keyboards)
     }
+}
+
+pub fn create_virtual_keyboard(name: &str) -> Result<UInputDevice> {
+    let device = uinput::default()
+        .map_err(|e| anyhow!("Failed to open /dev/uinput (sudo modprobe uinput): {e}"))?
+        .name(format!("{} OxideKeys", name))?
+        .event(uinput::event::Keyboard::All)?
+        .create()?;
+    Ok(device)
 }
 
 pub(crate) fn keyboard_processor(keyboard: Keyboard) -> Result<()> {

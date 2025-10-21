@@ -1,10 +1,7 @@
 mod config;
 mod consts;
-mod features;
-mod io;
 mod keyboard;
 mod layouts;
-mod pipeline;
 
 use crate::{
     config::config,
