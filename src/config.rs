@@ -88,15 +88,9 @@ fn default_layers() -> Layers {
                 (KeyCode::KEY_K, vec![KeyCode::KEY_UP]),
                 (KeyCode::KEY_L, vec![KeyCode::KEY_RIGHT]),
                 // (
-                (
-                    KeyCode::KEY_I,
-                    vec![KeyCode::KEY_LEFTSHIFT, KeyCode::KEY_9],
-                ),
+                (KeyCode::KEY_I, vec![KeyCode::KEY_LEFTSHIFT, KeyCode::KEY_9]),
                 // )
-                (
-                    KeyCode::KEY_D,
-                    vec![KeyCode::KEY_LEFTSHIFT, KeyCode::KEY_0],
-                ),
+                (KeyCode::KEY_D, vec![KeyCode::KEY_LEFTSHIFT, KeyCode::KEY_0]),
                 // {
                 (
                     KeyCode::KEY_X,
@@ -128,10 +122,7 @@ fn default_layers() -> Layers {
                     vec![KeyCode::KEY_LEFTSHIFT, KeyCode::KEY_SLASH],
                 ),
                 // @
-                (
-                    KeyCode::KEY_P,
-                    vec![KeyCode::KEY_LEFTSHIFT, KeyCode::KEY_2],
-                ),
+                (KeyCode::KEY_P, vec![KeyCode::KEY_LEFTSHIFT, KeyCode::KEY_2]),
                 // =
                 (KeyCode::KEY_A, vec![KeyCode::KEY_EQUAL]),
                 // |
@@ -140,30 +131,18 @@ fn default_layers() -> Layers {
                     vec![KeyCode::KEY_LEFTSHIFT, KeyCode::KEY_BACKSLASH],
                 ),
                 // ^
-                (
-                    KeyCode::KEY_E,
-                    vec![KeyCode::KEY_LEFTSHIFT, KeyCode::KEY_6],
-                ),
+                (KeyCode::KEY_E, vec![KeyCode::KEY_LEFTSHIFT, KeyCode::KEY_6]),
                 // _
                 (
                     KeyCode::KEY_U,
                     vec![KeyCode::KEY_LEFTSHIFT, KeyCode::KEY_MINUS],
                 ),
                 // #
-                (
-                    KeyCode::KEY_Q,
-                    vec![KeyCode::KEY_LEFTSHIFT, KeyCode::KEY_3],
-                ),
+                (KeyCode::KEY_Q, vec![KeyCode::KEY_LEFTSHIFT, KeyCode::KEY_3]),
                 // $
-                (
-                    KeyCode::KEY_T,
-                    vec![KeyCode::KEY_LEFTSHIFT, KeyCode::KEY_4],
-                ),
+                (KeyCode::KEY_T, vec![KeyCode::KEY_LEFTSHIFT, KeyCode::KEY_4]),
                 // &
-                (
-                    KeyCode::KEY_N,
-                    vec![KeyCode::KEY_LEFTSHIFT, KeyCode::KEY_7],
-                ),
+                (KeyCode::KEY_N, vec![KeyCode::KEY_LEFTSHIFT, KeyCode::KEY_7]),
                 // -
                 (KeyCode::KEY_S, vec![KeyCode::KEY_MINUS]),
                 // +
@@ -172,15 +151,9 @@ fn default_layers() -> Layers {
                     vec![KeyCode::KEY_LEFTSHIFT, KeyCode::KEY_EQUAL],
                 ),
                 // %
-                (
-                    KeyCode::KEY_W,
-                    vec![KeyCode::KEY_LEFTSHIFT, KeyCode::KEY_5],
-                ),
+                (KeyCode::KEY_W, vec![KeyCode::KEY_LEFTSHIFT, KeyCode::KEY_5]),
                 // *
-                (
-                    KeyCode::KEY_V,
-                    vec![KeyCode::KEY_LEFTSHIFT, KeyCode::KEY_8],
-                ),
+                (KeyCode::KEY_V, vec![KeyCode::KEY_LEFTSHIFT, KeyCode::KEY_8]),
             ]),
         )]),
     )])
@@ -193,12 +166,17 @@ fn default_keyboards() -> Keyboards {
             layout: default_layout(),
             mappings: default_mappings(),
             layers: default_layers(),
+            double_tap_timeout: default_double_tap_timeout(),
         },
     )])
 }
 
 fn default_layout() -> Option<String> {
     Some("dvorak".to_string())
+}
+
+fn default_double_tap_timeout() -> Option<u16> {
+    Some(140)
 }
 
 fn default_features() -> Features {
@@ -224,6 +202,8 @@ pub(crate) struct KeyboardConfig {
     pub mappings: Mappings,
     #[serde(default = "default_layers")]
     pub layers: Layers,
+    #[serde(default = "default_double_tap_timeout")]
+    pub double_tap_timeout: Option<u16>,
 }
 
 impl Default for Config {

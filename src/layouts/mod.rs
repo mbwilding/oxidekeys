@@ -5,7 +5,7 @@ use evdev::KeyCode;
 
 /// Used for mapping layout definitions
 pub(crate) trait Layout {
-    /// Convert a Qwerty key to the layout’s key
+    /// Convert a Qwerty key to the layout's key
     fn to(&self, key: &KeyCode) -> KeyCode;
 
     /// Convert a layout-specific key back to Qwerty

@@ -6,7 +6,9 @@ use crossbeam_channel::{select, unbounded};
 use evdev::Device as EvDevDevice;
 use evdev::{EventType, InputEvent, KeyCode};
 use log::{debug, info};
+use std::collections::HashMap;
 use std::collections::HashSet;
+use std::time::Instant;
 use udev::Enumerator;
 use uinput::Device;
 use uinput::device::Device as UInputDevice;
@@ -14,6 +16,17 @@ use uinput::device::Device as UInputDevice;
 pub(crate) const RELEASE: i32 = 0;
 pub(crate) const PRESS: i32 = 1;
 pub(crate) const EV_KEY: i32 = 1;
+
+#[derive(Debug, Clone)]
+struct DoubleTapState {
+    last_tap_time: Option<Instant>,
+    tap_count: u32,
+}
+
+#[derive(Debug, Clone)]
+struct RepeatState {
+    repeat_keys: Vec<KeyCode>,
+}
 
 pub(crate) struct Keyboard {
     pub device: EvDevDevice,
@@ -92,6 +105,8 @@ pub(crate) fn keyboard_processor(keyboard: Keyboard, config: &Config) -> Result<
     let mut keys_down: HashSet<KeyCode> = HashSet::new();
     let mut holds_triggered: HashSet<KeyCode> = HashSet::new();
     let mut active_layer: Option<String> = None;
+    let mut double_tap_states: HashMap<KeyCode, DoubleTapState> = HashMap::new();
+    let mut repeat_states: HashMap<KeyCode, RepeatState> = HashMap::new();
     let (tx, rx) = unbounded::<InputEvent>();
 
     let layout = crate::layouts::get(&kb_config.layout);
@@ -133,7 +148,17 @@ pub(crate) fn keyboard_processor(keyboard: Keyboard, config: &Config) -> Result<
                 }
 
                 if !key_handled && feature_dual_function_enabled {
-                    key_handled = feature_dual_function(&mut virt, &kb_config, &layout, &key_layout, state, &mut keys_down, &mut holds_triggered)?;
+                    key_handled = feature_dual_function_with_double_tap(
+                        &mut virt,
+                        &kb_config,
+                        &layout,
+                        &key_layout,
+                        state,
+                        &mut keys_down,
+                        &mut holds_triggered,
+                        &mut double_tap_states,
+                        &mut repeat_states
+                    )?;
                 }
 
                 if !key_handled {
@@ -146,10 +171,11 @@ pub(crate) fn keyboard_processor(keyboard: Keyboard, config: &Config) -> Result<
     Ok(())
 }
 
-/// Dual Function - Tap-Hold
+/// Dual Function with Double-Tap Repeat
 /// - If you press and release a key without overlapping another, Tap fires.
 /// - If you press the key and while it's held another key overlaps, Hold fires.
-fn feature_dual_function(
+/// - If you double-tap a key within the timeout, it starts repeating until released.
+fn feature_dual_function_with_double_tap(
     virt: &mut Device,
     kb_config: &KeyboardConfig,
     layout: &Box<dyn Layout>,
@@ -157,6 +183,8 @@ fn feature_dual_function(
     state: i32,
     keys_down: &mut HashSet<KeyCode>,
     holds_triggered: &mut HashSet<KeyCode>,
+    double_tap_states: &mut HashMap<KeyCode, DoubleTapState>,
+    repeat_states: &mut HashMap<KeyCode, RepeatState>,
 ) -> Result<bool> {
     if let Some(remap) = kb_config.mappings.get(key) {
         match state {
@@ -170,6 +198,36 @@ fn feature_dual_function(
                     if let Some(hold_keys) = &remap.hold {
                         send_keys(virt, layout, hold_keys, PRESS)?;
                     }
+                } else {
+                    let now = Instant::now();
+                    let double_tap_state =
+                        double_tap_states.entry(*key).or_insert(DoubleTapState {
+                            last_tap_time: None,
+                            tap_count: 0,
+                        });
+
+                    if let Some(last_tap) = double_tap_state.last_tap_time
+                        && let Some(double_tap_timeout) = kb_config.double_tap_timeout
+                    {
+                        if now.duration_since(last_tap).as_millis() <= double_tap_timeout as u128 {
+                            double_tap_state.tap_count += 1;
+
+                            if let Some(tap_keys) = &remap.tap {
+                                let repeat_state = RepeatState {
+                                    repeat_keys: tap_keys.clone(),
+                                };
+                                repeat_states.insert(*key, repeat_state);
+
+                                send_keys(virt, layout, tap_keys, PRESS)?;
+                            }
+                        } else {
+                            double_tap_state.tap_count = 1;
+                        }
+                    } else {
+                        double_tap_state.tap_count = 1;
+                    }
+
+                    double_tap_state.last_tap_time = Some(now);
                 }
 
                 return Ok(true);
@@ -178,14 +236,19 @@ fn feature_dual_function(
                 let was_hold = holds_triggered.remove(key);
                 keys_down.remove(key);
 
+                if let Some(repeat_state) = repeat_states.remove(key) {
+                    send_keys(virt, layout, &repeat_state.repeat_keys, RELEASE)?;
+                }
+
                 if was_hold {
                     if let Some(hold_keys) = &remap.hold {
                         send_keys(virt, layout, hold_keys, RELEASE)?;
                     }
-                } else if let Some(tap_keys) = &remap.tap {
-                    send_keys(virt, layout, tap_keys, PRESS)?;
-                    send_keys(virt, layout, tap_keys, RELEASE)?;
-                }
+                } else if let Some(tap_keys) = &remap.tap
+                    && !repeat_states.contains_key(key) {
+                        send_keys(virt, layout, tap_keys, PRESS)?;
+                        send_keys(virt, layout, tap_keys, RELEASE)?;
+                    }
 
                 return Ok(true);
             }
