@@ -176,7 +176,7 @@ fn default_layout() -> Option<String> {
 }
 
 fn default_double_tap_timeout() -> Option<u16> {
-    Some(140)
+    Some(144)
 }
 
 fn default_features() -> Features {
