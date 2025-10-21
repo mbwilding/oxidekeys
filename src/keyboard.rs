@@ -202,19 +202,17 @@ fn send_key(virt: &mut Device, layout: &Layout, key: &KeyCode, state: i32) -> Re
     let resolved_key = layout.resolve_reverse(key);
     virt.write(EV_KEY, resolved_key.0 as i32, state)?;
     virt.synchronize()?;
-    log_key(&resolved_key, state);
+    log_key(key, state);
     Ok(())
 }
 
 fn send_keys(virt: &mut Device, layout: &Layout, keys: &Vec<KeyCode>, state: i32) -> Result<()> {
-    let mut resolved_keys: Vec<KeyCode> = Vec::with_capacity(keys.len());
     for key in keys {
-        let key = layout.resolve_reverse(key);
-        virt.write(EV_KEY, key.0 as i32, state)?;
-        resolved_keys.push(key);
+        let resolved_key = layout.resolve_reverse(key);
+        virt.write(EV_KEY, resolved_key.0 as i32, state)?;
     }
     virt.synchronize()?;
-    log_keys(&resolved_keys, state);
+    log_keys(keys, state);
     Ok(())
 }
 
