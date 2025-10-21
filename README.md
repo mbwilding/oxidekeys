@@ -4,7 +4,7 @@
 
 A utility to give you agency over your keyboards.
 
-- **Remapping**: Remap keys
+- **Remapping**: Remap your keyboard.
 - **Dual-function keys**: Tap or hold a key for different actions. If pressed with another key it will default to the hold action without delay.
 - **Layers**: Hold a key to momentarily activate a different key mapping layer.
 
