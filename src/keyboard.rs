@@ -213,6 +213,8 @@ fn feature_dual_function_with_double_tap(
                             double_tap_state.tap_count += 1;
 
                             if let Some(tap_keys) = &remap.tap {
+                                repeat_states.remove(key);
+
                                 let repeat_state = RepeatState {
                                     repeat_keys: tap_keys.clone(),
                                 };
@@ -222,6 +224,7 @@ fn feature_dual_function_with_double_tap(
                             }
                         } else {
                             double_tap_state.tap_count = 1;
+                            repeat_states.remove(key);
                         }
                     } else {
                         double_tap_state.tap_count = 1;
@@ -236,8 +239,20 @@ fn feature_dual_function_with_double_tap(
                 let was_hold = holds_triggered.remove(key);
                 keys_down.remove(key);
 
+                let had_repeat_state = repeat_states.contains_key(key);
+
                 if let Some(repeat_state) = repeat_states.remove(key) {
                     send_keys(virt, layout, &repeat_state.repeat_keys, RELEASE)?;
+                }
+
+                if let Some(double_tap_state) = double_tap_states.get(key)
+                    && let Some(last_tap) = double_tap_state.last_tap_time
+                    && let Some(double_tap_timeout) = kb_config.double_tap_timeout
+                {
+                    let now = Instant::now();
+                    if now.duration_since(last_tap).as_millis() > (double_tap_timeout as u128 * 2) {
+                        double_tap_states.remove(key);
+                    }
                 }
 
                 if was_hold {
@@ -245,10 +260,11 @@ fn feature_dual_function_with_double_tap(
                         send_keys(virt, layout, hold_keys, RELEASE)?;
                     }
                 } else if let Some(tap_keys) = &remap.tap
-                    && !repeat_states.contains_key(key) {
-                        send_keys(virt, layout, tap_keys, PRESS)?;
-                        send_keys(virt, layout, tap_keys, RELEASE)?;
-                    }
+                    && !had_repeat_state
+                {
+                    send_keys(virt, layout, tap_keys, PRESS)?;
+                    send_keys(virt, layout, tap_keys, RELEASE)?;
+                }
 
                 return Ok(true);
             }
