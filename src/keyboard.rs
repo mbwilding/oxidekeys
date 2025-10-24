@@ -347,9 +347,10 @@ fn feature_layers(
                     if let Some(_prev_layer) = active_layer.take() {
                         for held_key in holds_triggered.iter().collect::<Vec<_>>() {
                             if let Some(remap) = kb_config.mappings.get(held_key)
-                                && let Some(hold_keys) = &remap.hold {
-                                    send_keys(virt, layout, hold_keys, RELEASE)?;
-                                }
+                                && let Some(hold_keys) = &remap.hold
+                            {
+                                send_keys(virt, layout, hold_keys, RELEASE)?;
+                            }
                         }
                         holds_triggered.clear();
                     }
