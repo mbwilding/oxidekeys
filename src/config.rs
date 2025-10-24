@@ -154,6 +154,8 @@ fn default_layers() -> Layers {
                 (KeyCode::KEY_W, vec![KeyCode::KEY_LEFTSHIFT, KeyCode::KEY_5]),
                 // *
                 (KeyCode::KEY_V, vec![KeyCode::KEY_LEFTSHIFT, KeyCode::KEY_8]),
+                // ~
+                (KeyCode::KEY_G, vec![KeyCode::KEY_LEFTSHIFT, KeyCode::KEY_GRAVE]),
             ]),
         )]),
     )])
