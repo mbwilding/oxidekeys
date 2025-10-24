@@ -22,6 +22,8 @@ echo 'KERNEL=="uinput", MODE="0660", GROUP="input"' | sudo tee /etc/udev/rules.d
 echo uinput | sudo tee /etc/modules-load.d/uinput.conf > /dev/null
 ```
 
+> Reboot after if it says `No keyboards found`
+
 ## Config
 
 Default config location: `~/.config/oxidekeys/config.yml`
