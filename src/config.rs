@@ -166,10 +166,8 @@ fn default_layers() -> Layers {
         (
             "Numbers".into(),
             HashMap::from([(
-                // CoPilot Key
                 KeyCode::KEY_F23,
                 HashMap::from([
-                    // Numebrs
                     (KeyCode::KEY_S, vec![KeyCode::KEY_0]),
                     (KeyCode::KEY_M, vec![KeyCode::KEY_1]),
                     (KeyCode::KEY_W, vec![KeyCode::KEY_2]),
